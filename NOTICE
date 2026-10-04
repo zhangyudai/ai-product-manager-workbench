@@ -1,14 +1,7 @@
-产品经理工作台 / Product Manager Workbench
+产品经理 AI 工作台 / Product Manager AI Workbench
 
-Product design and custom development: 周承健
-Maintainer: https://github.com/Zhouchengjian-user
-Repository: https://github.com/Zhouchengjian-user/product-manager-workbench
-
-Copyright 2026 周承健
-This notice applies only to original additions and modifications in this
-fork to the extent owned by 周承健. These code contributions are licensed
-under the Apache License, Version 2.0. It does not claim ownership of
-upstream code, third-party material, or underlying components.
+Current maintainer: https://github.com/zhangyudai
+Repository: https://github.com/zhangyudai/ai-product-manager-workbench
 
 Upstream projects:
 - AionUi: https://github.com/iOfficeAI/AionUi
@@ -18,11 +11,19 @@ Both upstream LICENSE files contain:
 Copyright 2025 AionUi (aionui.com)
 Licensed under the Apache License, Version 2.0.
 
-The upstream LICENSE files and existing source copyright notices are
-retained. Other bundled third-party notices and licenses continue to apply.
-See docs/MODIFICATIONS.md for the file-by-file customization inventory and
-upstream baseline commits. This root NOTICE is added by this fork; it is
-not presented as a NOTICE file supplied by either upstream project.
+This distribution also includes modifications inherited from:
+https://github.com/Zhouchengjian-user/product-manager-workbench
+Copyright 2026 周承健
+Those inherited modifications are used under the Apache License, Version 2.0.
+This attribution applies only to retained contributions from that source and
+does not claim ownership of upstream code, third-party material, or subsequent
+changes made in this repository.
+
+The upstream LICENSE files, applicable source copyright notices, and bundled
+third-party notices and licenses are retained. See docs/MODIFICATIONS.md for
+the imported baseline inventory and subsequent project records. This root
+NOTICE is maintained by this distribution and is not presented as a NOTICE
+file supplied by either upstream project.
 
 The product name and presentation identify this customized distribution.
 No upstream endorsement or third-party trademark rights are claimed.
