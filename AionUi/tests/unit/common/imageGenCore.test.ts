@@ -30,6 +30,25 @@ function createNonImageFile(dir: string, name: string): string {
   return filePath;
 }
 
+function supportsSymlinks(): boolean {
+  const dir = mkdtempSync(join(tmpdir(), 'aionui-symlink-capability-'));
+  try {
+    const target = join(dir, 'target');
+    writeFileSync(target, 'test');
+    symlinkSync(target, join(dir, 'link'));
+    return true;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'EPERM') {
+      return false;
+    }
+    throw error;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+const symlinkIt = supportsSymlinks() ? it : it.skip;
+
 afterEach(() => {
   for (const d of cleanupDirs) {
     try {
@@ -140,7 +159,7 @@ describe('processImageUri', () => {
     await expect(processImageUri('nonexistent.png', ws)).rejects.toThrow('Image file not found');
   });
 
-  it('should block a symlink inside the workspace that points outside', async () => {
+  symlinkIt('should block a symlink inside the workspace that points outside', async () => {
     const ws = createWorkspace();
     // Secret image lives outside the workspace; a symlink inside the workspace
     // points to it. The lexical containment check passes for the link path, but
@@ -152,7 +171,7 @@ describe('processImageUri', () => {
     await expect(processImageUri('linked.png', ws)).rejects.toThrow('Path traversal blocked');
   });
 
-  it('should block a symlinked directory inside the workspace that points outside', async () => {
+  symlinkIt('should block a symlinked directory inside the workspace that points outside', async () => {
     const ws = createWorkspace();
     const outsideDir = createWorkspace();
     createImageFile(outsideDir, 'secret.png');
@@ -161,7 +180,7 @@ describe('processImageUri', () => {
     await expect(processImageUri('linked-dir/secret.png', ws)).rejects.toThrow('Path traversal blocked');
   });
 
-  it('should allow a symlink inside the workspace that stays inside', async () => {
+  symlinkIt('should allow a symlink inside the workspace that stays inside', async () => {
     const ws = createWorkspace();
     const imgPath = createImageFile(ws, 'real.png');
     symlinkSync(imgPath, join(ws, 'alias.png'));

@@ -326,8 +326,8 @@ i18n-check:
 check: lint fmt-check typecheck i18n-check
 
 # Select a lightweight documentation gate or the full repository gate.
+[script('node')]
 push-gate:
-    #!/usr/bin/env node
     const { execFileSync, spawnSync } = require('node:child_process');
     const git = (args, options = {}) => {
       const result = execFileSync('git', args, { encoding: 'utf8', ...options });
@@ -374,9 +374,11 @@ lint-strict:
 # Testing
 # ============================================================
 
-# Run all tests with bounded worker concurrency to avoid DOM import timeouts.
+# Run all tests with bounded worker concurrency. Build tests mutate the shared
+# out/ directory, so run that file separately to prevent cross-file races.
 test:
-    bun run test -- --maxWorkers=4
+    bun run test -- --maxWorkers=4 --exclude tests/unit/bootstrap/buildWithBuilder.test.ts
+    bun run test -- tests/unit/bootstrap/buildWithBuilder.test.ts --maxWorkers=1
 
 # Run tests in watch mode
 test-watch:

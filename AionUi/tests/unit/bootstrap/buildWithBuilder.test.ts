@@ -7,12 +7,15 @@
 import { spawnSync } from 'node:child_process';
 import {
   existsSync,
+  lstatSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
   renameSync,
+  rmdirSync,
   rmSync,
+  unlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -20,6 +23,21 @@ import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const repoRoot = resolve(__dirname, '../../..');
+
+function removeDirectory(path: string): void {
+  if (!existsSync(path)) {
+    return;
+  }
+  for (const entry of readdirSync(path)) {
+    const entryPath = join(path, entry);
+    if (lstatSync(entryPath).isDirectory()) {
+      removeDirectory(entryPath);
+    } else {
+      unlinkSync(entryPath);
+    }
+  }
+  rmdirSync(path);
+}
 
 function readInstallerErrorDefinitions(): Array<{ defineName: string; code: string }> {
   const source = readFileSync(resolve(repoRoot, 'resources/windows/installer-errors-sentry.nsh'), 'utf8');
@@ -97,7 +115,7 @@ childProcess.execSync = function mockedExecSync(command) {
       expect(result.status).not.toBe(0);
       expect(result.stderr + result.stdout).toContain('Renderer build output is incomplete');
     } finally {
-      rmSync(outDir, { recursive: true, force: true });
+      removeDirectory(outDir);
       if (movedExistingOut) {
         renameSync(backupOutDir, outDir);
       }
@@ -370,7 +388,7 @@ childProcess.execSync = function mockedExecSync(command) {
       const calls = JSON.parse(readFileSync(callsPath, 'utf8')) as Array<{ arch?: string } | null>;
       expect(calls).toContainEqual(expect.objectContaining({ arch: expectedArch }));
     } finally {
-      rmSync(outDir, { recursive: true, force: true });
+      removeDirectory(outDir);
       if (movedExistingOut) {
         renameSync(backupOutDir, outDir);
       }
