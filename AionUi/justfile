@@ -325,9 +325,45 @@ i18n-check:
 # Run all checks (lint + format + typecheck + i18n) — mirrors CI code-quality job
 check: lint fmt-check typecheck i18n-check
 
-# Pre-push gate: lint + format check + typecheck + i18n + test, then push
-# Uses --quiet to suppress warnings (exit code is still non-zero on errors)
-push *ARGS: lint-strict fmt-check typecheck i18n-check test
+# Select a lightweight documentation gate or the full repository gate.
+push-gate:
+    #!/usr/bin/env node
+    const { execFileSync, spawnSync } = require('node:child_process');
+    const git = (args, options = {}) => {
+      const result = execFileSync('git', args, { encoding: 'utf8', ...options });
+      return typeof result === 'string' ? result.trim() : '';
+    };
+    let upstream;
+    try {
+      upstream = git(['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}']);
+    } catch {
+      console.log('[push] No tracked upstream; running the full repository gate.');
+    }
+    let docsOnly = false;
+    if (upstream) {
+      const base = git(['merge-base', 'HEAD', upstream]);
+      const files = git(['-c', 'core.quotepath=false', 'diff', '--name-only', base + '...HEAD']).split(/\r?\n/).filter(Boolean);
+      docsOnly = files.length > 0 && files.every((file) =>
+        file.startsWith('docs/') || /(^|\/)(README|CHANGELOG|CONTRIBUTING)(\..*)?$/i.test(file) || /(^|\/)(LICENSE|NOTICE)$/i.test(file) || /\.(md|mdx|txt)$/i.test(file)
+      );
+      git(['diff', '--check', base + '...HEAD'], { stdio: 'inherit' });
+      if (docsOnly) console.log('[push] Documentation-only change (' + files.length + ' file(s)); full repository tests skipped.');
+    }
+    if (!docsOnly) {
+      const command = process.platform === 'win32' ? 'just.exe' : 'just';
+      const result = spawnSync(command, ['push-checks-full'], { stdio: 'inherit' });
+      process.exit(result.status ?? 1);
+    }
+
+# Full code-quality and test gate used by code pushes and release preparation.
+push-checks-full: lint-strict fmt-check typecheck i18n-check test
+
+# Auto-select the appropriate gate, then push. Extra args are forwarded to git push.
+push *ARGS: push-gate
+    git push {{ ARGS }}
+
+# Force the complete repository gate before pushing, regardless of changed files.
+push-full *ARGS: push-checks-full
     git push {{ ARGS }}
 
 # Lint with only errors reported (for CI/push gates)
@@ -338,9 +374,9 @@ lint-strict:
 # Testing
 # ============================================================
 
-# Run all tests
+# Run all tests with bounded worker concurrency to avoid DOM import timeouts.
 test:
-    bun run test
+    bun run test -- --maxWorkers=4
 
 # Run tests in watch mode
 test-watch:

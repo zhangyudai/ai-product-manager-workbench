@@ -103,16 +103,17 @@ node scripts/check-i18n.js
 
 ### Before Pushing
 
-AI agents must not push unless explicitly asked. When pushing, use `just push`, never `git push`:
+AI agents must not push unless explicitly asked. When pushing, use `just push`, never `git push`. `just push` automatically uses a lightweight diff check for documentation-only commits and the full repository gate for all other changes. Use `just push-full` to force the full gate before a release or milestone merge:
 
 ```bash
-just push                          # lint → format-check → typecheck → test → git push
-just push -u origin feat/branch    # same checks, with extra git push args
+just push                          # auto-select docs-only or full gate → git push
+just push -u origin feat/branch    # same auto-selection, with extra git push args
+just push-full                     # always lint → format-check → typecheck → i18n → test → git push
 ```
 
 Any step that fails aborts the push. Fix the issue, commit, then retry.
 
-> **Note for AI agents**: `just push` uses `--quiet` for lint — only errors cause failure. The project has many pre-existing lint _warnings_ which do NOT indicate failure. Judge success by exit code, not by output volume.
+> **Note for AI agents**: the full gate uses `--quiet` for lint — only errors cause failure. The project has many pre-existing lint _warnings_ which do NOT indicate failure. Judge success by exit code, not by output volume.
 
 ### Before PR (optional stricter check)
 

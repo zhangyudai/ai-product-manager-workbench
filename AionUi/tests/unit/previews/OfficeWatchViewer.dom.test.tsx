@@ -25,7 +25,7 @@ let officeWatchModule: OfficeWatchModule;
 
 beforeAll(async () => {
   officeWatchModule = await import('@/renderer/pages/conversation/Preview/components/viewers/OfficeWatchViewer');
-}, 30_000);
+}, 60_000);
 
 describe('OfficeWatchViewer module shape', () => {
   it('module loads and exposes a default export', () => {
