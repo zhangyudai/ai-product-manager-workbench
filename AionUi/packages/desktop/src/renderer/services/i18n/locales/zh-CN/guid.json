@@ -1,0 +1,17 @@
+{
+  "promptExamplesHint": "试试这些指令",
+  "defaultPrompts": {
+    "understand": "我有一个产品想法，请先分析目标用户、使用场景、痛点、核心需求和 MVP 范围，再列出需要我确认的问题，暂时不要直接生成 PRD",
+    "cleanup": "我有访谈、会议或竞品资料，请基于资料提炼产品目标、用户场景、核心需求和待确认问题，不要把推测写成已确认事实",
+    "create": "我收到一项业务需求，请帮我梳理需求背景、目标用户、业务目标、功能范围、用户故事和验收标准，并标出需要确认的信息"
+  },
+  "selectAssistantHint": "选择一位助手开始任务",
+  "workspace": {
+    "workInProject": "在项目中工作",
+    "optional": "可选",
+    "clearWorkspace": "清除",
+    "specifyWorkspace": "选择项目文件夹",
+    "searchPlaceholder": "搜索项目…",
+    "noProject": "不使用项目"
+  }
+}
