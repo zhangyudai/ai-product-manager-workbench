@@ -1,0 +1,17 @@
+{
+  "promptExamplesHint": "Try these instructions",
+  "defaultPrompts": {
+    "understand": "I have a product idea. Analyze the target users, scenarios, pain points, core needs, and MVP scope, then list the questions I need to confirm. Do not generate the PRD yet",
+    "cleanup": "I have interview, meeting, or competitor materials. Extract the product goal, user scenarios, core needs, and open questions without presenting assumptions as confirmed facts",
+    "create": "I received a business request. Help me clarify its background, target users, business goals, functional scope, user stories, and acceptance criteria, and highlight missing information"
+  },
+  "selectAssistantHint": "Select an assistant to start a task",
+  "workspace": {
+    "workInProject": "Work in a project",
+    "optional": "Optional",
+    "clearWorkspace": "Clear",
+    "specifyWorkspace": "Select project folder",
+    "searchPlaceholder": "Search projects…",
+    "noProject": "No Project"
+  }
+}

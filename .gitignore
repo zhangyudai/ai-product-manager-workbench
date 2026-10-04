@@ -1,0 +1,13 @@
+.DS_Store
+node_modules/
+target/
+.env
+.env.*
+!.env.example
+*.log
+
+# Upstream README demo recordings are documentation-only and too large for
+# reliable pushes through the current network proxy. Keep source and static
+# images; refer to the upstream repository for these recordings.
+AionUi/resources/*.gif
+AionUi/resources/*.mp4
