@@ -103,12 +103,12 @@ node scripts/check-i18n.js
 
 ### Before Pushing
 
-AI agents must not push unless explicitly asked. When pushing, use `just push`, never `git push`. `just push` automatically uses a lightweight diff check for documentation-only commits and the full repository gate for all other changes. Use `just push-full` to force the full gate before a release or milestone merge:
+AI agents must not push unless explicitly asked. When pushing, use `just push`, never `git push`. The default command uses a lightweight diff check for documentation-only commits and a fast development gate for code changes: static checks plus tests related to changed files. Run the full repository gate before a PR merge, milestone acceptance, or release:
 
 ```bash
-just push                          # auto-select docs-only or full gate → git push
-just push -u origin feat/branch    # same auto-selection, with extra git push args
-just push-full                     # always lint → format-check → typecheck → i18n → test → git push
+just push                          # docs-only or fast code gate → git push
+just push -u origin feat/branch    # same selection, with extra git push args
+just push-full                     # full gate → git push before merge/release
 ```
 
 Any step that fails aborts the push. Fix the issue, commit, then retry.

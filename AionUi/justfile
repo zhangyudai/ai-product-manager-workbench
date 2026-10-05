@@ -325,7 +325,7 @@ i18n-check:
 # Run all checks (lint + format + typecheck + i18n) — mirrors CI code-quality job
 check: lint fmt-check typecheck i18n-check
 
-# Select a lightweight documentation gate or the full repository gate.
+# Select a documentation-only gate or the normal fast code gate.
 [script('node')]
 push-gate:
     const { execFileSync, spawnSync } = require('node:child_process');
@@ -338,6 +338,9 @@ push-gate:
       upstream = git(['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}']);
     } catch {
       console.log('[push] No tracked upstream; running the full repository gate.');
+      const command = process.platform === 'win32' ? 'just.exe' : 'just';
+      const result = spawnSync(command, ['push-checks-full'], { stdio: 'inherit' });
+      process.exit(result.status ?? 1);
     }
     let docsOnly = false;
     if (upstream) {
@@ -347,22 +350,25 @@ push-gate:
         file.startsWith('docs/') || /(^|\/)(README|CHANGELOG|CONTRIBUTING)(\..*)?$/i.test(file) || /(^|\/)(LICENSE|NOTICE)$/i.test(file) || /\.(md|mdx|txt)$/i.test(file)
       );
       git(['diff', '--check', base + '...HEAD'], { stdio: 'inherit' });
-      if (docsOnly) console.log('[push] Documentation-only change (' + files.length + ' file(s)); full repository tests skipped.');
+      if (docsOnly) console.log('[push] Documentation-only change (' + files.length + ' file(s)); code checks skipped.');
     }
     if (!docsOnly) {
       const command = process.platform === 'win32' ? 'just.exe' : 'just';
-      const result = spawnSync(command, ['push-checks-full'], { stdio: 'inherit' });
+      const result = spawnSync(command, ['push-checks-fast'], { stdio: 'inherit' });
       process.exit(result.status ?? 1);
     }
 
-# Full code-quality and test gate used by code pushes and release preparation.
+# Normal development gate: static checks plus tests related to changed files.
+push-checks-fast: lint-strict fmt-check typecheck i18n-check test-related
+
+# Full gate used before PR merge, milestone acceptance, and release preparation.
 push-checks-full: lint-strict fmt-check typecheck i18n-check test
 
 # Auto-select the appropriate gate, then push. Extra args are forwarded to git push.
 push *ARGS: push-gate
     git push {{ ARGS }}
 
-# Force the complete repository gate before pushing, regardless of changed files.
+# Force the complete repository gate before a milestone or release push.
 push-full *ARGS: push-checks-full
     git push {{ ARGS }}
 
@@ -373,6 +379,42 @@ lint-strict:
 # ============================================================
 # Testing
 # ============================================================
+
+# Run tests related to files changed from the tracked upstream branch.
+[script('node')]
+test-related:
+    const { execFileSync, spawnSync } = require('node:child_process');
+    const { existsSync } = require('node:fs');
+    const { resolve } = require('node:path');
+    const git = (args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
+    let upstream;
+    try {
+      upstream = git(['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}']);
+    } catch {
+      console.error('[test-related] A tracked upstream branch is required. Use just push-full for the first push.');
+      process.exit(1);
+    }
+    const base = git(['merge-base', 'HEAD', upstream]);
+    const files = git(['-c', 'core.quotepath=false', 'diff', '--name-only', base + '...HEAD'])
+      .split(/\r?\n/)
+      .filter((file) => file.startsWith('AionUi/'))
+      .map((file) => file.slice('AionUi/'.length))
+      .filter((file) => file && existsSync(resolve(file)));
+    if (files.length === 0) {
+      console.log('[test-related] No changed AionUi files; related tests skipped.');
+      process.exit(0);
+    }
+    console.log('[test-related] Checking ' + files.length + ' changed AionUi file(s).');
+    const args = [
+      'node_modules/vitest/vitest.mjs',
+      'related',
+      '--run',
+      '--passWithNoTests',
+      '--maxWorkers=4',
+      ...files,
+    ];
+    const result = spawnSync(process.execPath, args, { stdio: 'inherit' });
+    process.exit(result.status ?? 1);
 
 # Run all tests with bounded worker concurrency. Build tests mutate the shared
 # out/ directory, so run that file separately to prevent cross-file races.
