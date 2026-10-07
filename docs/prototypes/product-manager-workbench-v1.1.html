@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>产品经理工作台 V1.1 原型</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f8fb;
+      --surface: #ffffff;
+      --surface-2: #f0f3f7;
+      --surface-3: #e8edf3;
+      --text: #111827;
+      --muted: #5f6b7a;
+      --subtle: #8a95a5;
+      --border: #dce2e9;
+      --border-strong: #c7d0db;
+      --primary: #0f172a;
+      --primary-soft: #e8edf5;
+      --accent: #0369a1;
+      --accent-soft: #e0f2fe;
+      --success: #047857;
+      --success-soft: #ecfdf5;
+      --warning: #b45309;
+      --warning-soft: #fff7ed;
+      --danger: #b91c1c;
+      --danger-soft: #fef2f2;
+      --focus: #0369a1;
+      --sidebar: #eef2f6;
+      --radius-sm: 7px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --shadow-float: 0 12px 32px rgba(15, 23, 42, .12);
+      --motion: 160ms;
+    }
+
+    [data-theme="teal"] {
+      --bg: #f5f8f7;
+      --surface-2: #eef4f2;
+      --surface-3: #e2eeea;
+      --text: #132521;
+      --muted: #536963;
+      --subtle: #7b8f89;
+      --border: #d7e2de;
+      --border-strong: #bccdc7;
+      --primary: #123c35;
+      --primary-soft: #dceae6;
+      --accent: #0f766e;
+      --accent-soft: #ccfbf1;
+      --focus: #0f766e;
+      --sidebar: #edf4f2;
+    }
+
+    [data-theme="graphite"] {
+      --bg: #f7f6f4;
+      --surface-2: #f1f0ed;
+      --surface-3: #e8e6e1;
+      --text: #242322;
+      --muted: #66625d;
+      --subtle: #908a82;
+      --border: #e0ddd7;
+      --border-strong: #cbc6bd;
+      --primary: #292524;
+      --primary-soft: #e9e5df;
+      --accent: #a16207;
+      --accent-soft: #fef3c7;
+      --focus: #a16207;
+      --sidebar: #f0eeea;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.5 Inter, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
+      transition: background-color var(--motion), color var(--motion);
+    }
+    button, input, textarea, select { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .52; }
+    button, input, textarea, select { outline: none; }
+    :focus-visible { outline: 3px solid color-mix(in srgb, var(--focus) 68%, transparent); outline-offset: 2px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 1ms !important; animation-duration: 1ms !important; }
+    }
+
+    .skip-link { position: fixed; left: 12px; top: -60px; z-index: 99; padding: 9px 12px; background: var(--primary); color: white; border-radius: var(--radius-sm); }
+    .skip-link:focus { top: 12px; }
+
+    .prototype-bar {
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .prototype-meta { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .prototype-meta strong { white-space: nowrap; }
+    .prototype-meta span { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .theme-switcher { display: flex; align-items: center; gap: 6px; }
+    .theme-switcher > span { color: var(--muted); margin-right: 2px; }
+    .theme-button { min-height: 32px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 999px; color: var(--muted); background: var(--surface); }
+    .theme-button[aria-pressed="true"] { color: var(--surface); background: var(--primary); border-color: var(--primary); }
+
+    .app-shell { height: calc(100vh - 48px); min-height: 0; display: grid; grid-template-columns: 252px minmax(0, 1fr); overflow: hidden; }
+    .sidebar { min-width: 0; display: flex; flex-direction: column; background: var(--sidebar); border-right: 1px solid var(--border); }
+    .brand { height: 68px; display: flex; align-items: center; gap: 10px; padding: 0 18px; color: var(--text); text-decoration: none; border-bottom: 1px solid var(--border); }
+    .brand-mark { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; background: var(--primary); color: var(--surface); font-weight: 700; letter-spacing: -.04em; }
+    .brand-title { font-weight: 650; letter-spacing: -.01em; }
+    .brand-version { margin-left: auto; color: var(--subtle); font-size: 12px; }
+    .nav { display: grid; gap: 4px; padding: 14px 10px; }
+    .nav-button { min-height: 40px; display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--muted); text-align: left; transition: background-color var(--motion), color var(--motion); }
+    .nav-button:hover { background: color-mix(in srgb, var(--surface) 75%, transparent); color: var(--text); }
+    .nav-button[aria-current="page"] { background: var(--surface); color: var(--text); font-weight: 600; }
+    .nav-button svg { width: 18px; height: 18px; stroke-width: 1.8; }
+    .nav-button.nav-create { margin: 4px 0 6px; border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border)); background: var(--accent-soft); color: var(--accent); font-weight: 650; }
+    .nav-button.nav-create:hover { border-color: color-mix(in srgb, var(--accent) 48%, var(--border)); background: color-mix(in srgb, var(--accent-soft) 78%, var(--surface)); color: var(--accent); }
+    .nav-button.nav-create[aria-current="page"] { border-color: var(--accent); background: var(--accent); color: white; }
+    .nav-shortcut { margin-left: auto; color: var(--subtle); font-size: 11px; font-weight: 500; }
+    .nav-button.nav-create[aria-current="page"] .nav-shortcut { color: color-mix(in srgb, white 76%, transparent); }
+    .nav-count { margin-left: auto; min-width: 22px; padding: 1px 6px; border-radius: 999px; background: var(--surface-3); color: var(--muted); text-align: center; font-size: 12px; }
+    .sidebar-context { flex: 1; min-height: 0; margin: 6px 10px 0; padding-top: 14px; border-top: 1px solid var(--border); overflow-y: auto; }
+    .context-section + .context-section { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+    .context-label { display: flex; justify-content: space-between; align-items: center; padding: 0 10px 8px; color: var(--subtle); font-size: 12px; }
+    .project-shortcut { width: 100%; padding: 10px; border: 0; border-radius: var(--radius-sm); background: transparent; text-align: left; color: var(--muted); }
+    .project-shortcut:hover { background: color-mix(in srgb, var(--surface) 75%, transparent); color: var(--text); }
+    .project-shortcut strong, .project-shortcut span { display: block; }
+    .project-shortcut span { margin-top: 2px; color: var(--subtle); font-size: 12px; }
+    .sidebar-footer { margin-top: auto; padding: 10px; border-top: 1px solid var(--border); }
+
+    .main { min-width: 0; overflow: auto; background: var(--bg); }
+    .view { display: none; min-height: 100%; }
+    .view.active { display: block; }
+    .page-head { min-height: 68px; position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 12px; padding: 0 28px; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); }
+    .page-head h1 { margin: 0; font-size: 17px; font-weight: 650; }
+    .page-head .head-spacer { flex: 1; }
+    .status-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 4px 9px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); font-size: 12px; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); }
+    .icon-button { width: 34px; height: 34px; display: inline-grid; place-items: center; padding: 0; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--muted); }
+    .icon-button:hover { color: var(--text); border-color: var(--border-strong); }
+    .icon-button svg { width: 17px; height: 17px; }
+
+    .home { min-height: calc(100vh - 116px); display: grid; align-content: center; justify-items: center; padding: 40px 28px 72px; }
+    .home-inner { width: min(860px, 100%); }
+    .eyebrow { margin-bottom: 8px; color: var(--accent); font-weight: 650; letter-spacing: .02em; }
+    .home h1 { margin: 0; max-width: 680px; font-size: clamp(28px, 3vw, 40px); line-height: 1.2; letter-spacing: -.035em; }
+    .home-lead { margin: 12px 0 24px; max-width: 680px; color: var(--muted); font-size: 15px; }
+    .start-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .start-card { min-height: 116px; padding: 15px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text); text-align: left; transition: border-color var(--motion), background-color var(--motion); }
+    .start-card:hover { border-color: var(--border-strong); background: color-mix(in srgb, var(--accent-soft) 28%, var(--surface)); }
+    .start-card svg { width: 20px; height: 20px; color: var(--accent); }
+    .start-card strong, .start-card span { display: block; }
+    .start-card strong { margin: 9px 0 3px; }
+    .start-card span { color: var(--muted); font-size: 12px; }
+
+    .composer { border: 1px solid var(--border-strong); border-radius: var(--radius-lg); background: var(--surface); overflow: visible; }
+    .composer textarea { width: 100%; min-height: 108px; resize: vertical; padding: 16px 18px 6px; border: 0; background: transparent; color: var(--text); line-height: 1.65; }
+    .composer textarea::placeholder { color: var(--subtle); }
+    .composer-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 8px 10px 10px; }
+    .select-quiet { min-height: 34px; padding: 6px 30px 6px 9px; border: 0; border-radius: var(--radius-sm); background: var(--surface-2); color: var(--muted); }
+    .composer-more { position: relative; }
+    .composer-more > summary { list-style: none; }
+    .composer-more > summary::-webkit-details-marker { display: none; }
+    .composer-more[open] > summary { color: var(--text); border-color: var(--border-strong); background: var(--surface-2); }
+    .composer-more-panel { position: absolute; right: 0; bottom: 42px; z-index: 12; width: 270px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); box-shadow: var(--shadow-float); }
+    .composer-more-panel .field { margin: 0; }
+    .composer-more-panel p { margin: 8px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .send-button { width: 36px; height: 36px; margin-left: auto; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--primary); color: var(--surface); }
+    .send-button svg { width: 17px; height: 17px; }
+    .context-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; color: var(--muted); font-size: 12px; }
+
+    .workspace { min-height: 100%; display: grid; grid-template-rows: auto auto 1fr; }
+    .project-header { display: flex; align-items: center; gap: 10px; padding: 18px 28px 14px; }
+    .project-title { min-width: 0; }
+    .project-title h1 { margin: 0; font-size: 20px; letter-spacing: -.02em; }
+    .project-title p { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
+    .workspace-tabs { display: flex; gap: 2px; padding: 0 28px; border-bottom: 1px solid var(--border); }
+    .workspace-tab { min-height: 40px; padding: 8px 12px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); }
+    .workspace-tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--primary); font-weight: 650; }
+    .workspace-body { padding: 22px 28px 48px; }
+    .workspace-panel { display: none; }
+    .workspace-panel.active { display: block; }
+    .section-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+    .section-head h2 { margin: 0; font-size: 18px; letter-spacing: -.015em; }
+    .section-head p { margin: 3px 0 0; color: var(--muted); }
+    .section-head .actions { margin-left: auto; display: flex; gap: 8px; }
+    .button { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 7px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-weight: 600; }
+    .button:hover { border-color: var(--border-strong); background: var(--surface-2); }
+    .button.primary { background: var(--primary); color: var(--surface); border-color: var(--primary); }
+    .button.accent { background: var(--accent); color: white; border-color: var(--accent); }
+    .button.ghost { background: transparent; }
+    .button svg { width: 16px; height: 16px; }
+
+    .analysis-layout { display: grid; grid-template-columns: minmax(0, 1fr) 292px; gap: 16px; align-items: start; }
+    .panel { border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); }
+    .panel-head { min-height: 48px; display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+    .panel-head strong { font-weight: 650; }
+    .panel-body { padding: 14px; }
+    .field { display: grid; gap: 6px; margin-bottom: 13px; }
+    .field label { color: var(--muted); font-size: 12px; font-weight: 600; }
+    .field input, .field textarea, .field select { width: 100%; min-height: 38px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); }
+    .field textarea { min-height: 84px; resize: vertical; }
+    .helper { color: var(--subtle); font-size: 12px; }
+    .source-list { display: grid; gap: 7px; }
+    .source-item { display: flex; align-items: center; gap: 9px; min-height: 38px; padding: 8px 9px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2); }
+    .source-item input { accent-color: var(--accent); }
+    .source-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .source-item small { margin-left: auto; color: var(--subtle); }
+    .analysis-state { display: none; }
+    .analysis-state.active { display: block; }
+    .empty-state { min-height: 310px; display: grid; place-items: center; padding: 30px; text-align: center; }
+    .empty-state-inner { max-width: 390px; }
+    .empty-state h3 { margin: 10px 0 5px; }
+    .empty-state p { margin: 0 0 16px; color: var(--muted); }
+    .spinner { width: 28px; height: 28px; margin: 0 auto; border: 3px solid var(--surface-3); border-top-color: var(--accent); border-radius: 50%; animation: spin 900ms linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .analysis-result { display: grid; gap: 10px; }
+    .result-row { padding: 12px; border-bottom: 1px solid var(--border); }
+    .result-row:last-child { border-bottom: 0; }
+    .result-row label { display: block; margin-bottom: 4px; color: var(--muted); font-size: 12px; font-weight: 600; }
+    .result-row textarea { width: 100%; min-height: 62px; padding: 0; border: 0; resize: vertical; background: transparent; color: var(--text); line-height: 1.6; }
+    .notice { display: flex; align-items: flex-start; gap: 9px; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--warning-soft); color: var(--warning); }
+    .notice svg { flex: 0 0 auto; width: 17px; height: 17px; margin-top: 2px; }
+    .progress { height: 6px; overflow: hidden; border-radius: 999px; background: var(--surface-3); }
+    .progress > span { display: block; width: 64%; height: 100%; background: var(--accent); }
+    .meta-list { display: grid; gap: 10px; }
+    .meta-row { display: flex; justify-content: space-between; gap: 16px; color: var(--muted); }
+    .meta-row strong { color: var(--text); font-weight: 600; text-align: right; }
+
+    .prd-layout { display: grid; grid-template-columns: 220px minmax(0, 780px) 240px; gap: 16px; align-items: start; }
+    .toc { position: sticky; top: 84px; display: grid; gap: 2px; }
+    .toc button { min-height: 34px; padding: 7px 9px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--muted); text-align: left; }
+    .toc button[aria-current="true"] { background: var(--surface); color: var(--text); font-weight: 600; }
+    .document { min-height: 720px; padding: 34px 42px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); }
+    .document [contenteditable="true"] { outline: none; }
+    .document h1 { margin: 0 0 8px; font-size: 28px; letter-spacing: -.03em; }
+    .document h2 { margin: 30px 0 8px; font-size: 18px; }
+    .document p, .document li { color: #374151; line-height: 1.8; }
+    .document ul { padding-left: 20px; }
+    .save-indicator { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; }
+    .save-indicator svg { width: 15px; height: 15px; }
+    .chapter-actions { display: grid; gap: 8px; }
+    .chapter-actions .button { justify-content: flex-start; }
+
+    .simple-page { padding: 24px 28px 48px; }
+    .list { display: grid; gap: 8px; }
+    .list-row { display: grid; grid-template-columns: 1.3fr .8fr .7fr auto; gap: 12px; align-items: center; min-height: 52px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); }
+    .list-row small { color: var(--muted); }
+    .task-state { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
+    .settings-grid { max-width: 840px; display: grid; gap: 14px; }
+    .setting-row { display: grid; grid-template-columns: 220px 1fr; gap: 24px; padding: 16px; border-bottom: 1px solid var(--border); }
+    .setting-row h3 { margin: 0; font-size: 14px; }
+    .setting-row p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+
+    .toast { position: fixed; right: 20px; bottom: 20px; z-index: 50; display: none; align-items: center; gap: 9px; max-width: 360px; padding: 11px 13px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text); box-shadow: var(--shadow-float); }
+    .toast.show { display: flex; }
+    .toast svg { width: 18px; height: 18px; color: var(--success); }
+
+    @media (max-width: 1080px) {
+      .app-shell { grid-template-columns: 210px minmax(0, 1fr); }
+      .analysis-layout { grid-template-columns: 1fr; }
+      .prd-layout { grid-template-columns: 170px minmax(0, 1fr); }
+      .chapter-actions { grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .prototype-meta span { display: none; }
+    }
+    @media (max-width: 780px) {
+      .prototype-bar { align-items: flex-start; flex-direction: column; }
+      .theme-switcher { width: 100%; overflow-x: auto; }
+      body { overflow: auto; }
+      .app-shell { height: calc(100vh - 90px); min-height: 620px; grid-template-columns: 72px minmax(0, 1fr); }
+      .brand { padding: 0 18px; }
+      .brand-title, .brand-version, .nav-button span, .nav-shortcut, .nav-count, .sidebar-context, .sidebar-footer span { display: none; }
+      .nav-button { justify-content: center; }
+      .start-grid { grid-template-columns: 1fr; }
+      .project-header, .workspace-body, .simple-page { padding-left: 18px; padding-right: 18px; }
+      .workspace-tabs { padding-left: 18px; overflow-x: auto; }
+      .prd-layout { grid-template-columns: 1fr; }
+      .toc { position: static; display: flex; overflow-x: auto; }
+      .document { padding: 24px; }
+      .list-row { grid-template-columns: 1fr; }
+      .setting-row { grid-template-columns: 1fr; gap: 10px; }
+    }
+  </style>
+</head>
+<body data-theme="navy">
+  <a class="skip-link" href="#main-content">跳到主要内容</a>
+  <header class="prototype-bar" aria-label="原型视觉方向">
+    <div class="prototype-meta">
+      <strong>V1.1 可点击原型</strong>
+      <span>创新 4 · 动效 2 · 密度 8｜当前仅用于视觉与交互验收</span>
+    </div>
+    <div class="theme-switcher" role="group" aria-label="选择视觉方向">
+      <span>视觉方向</span>
+      <button class="theme-button" type="button" data-theme-choice="navy" aria-pressed="true">深蓝秩序</button>
+      <button class="theme-button" type="button" data-theme-choice="teal" aria-pressed="false">青绿专注</button>
+      <button class="theme-button" type="button" data-theme-choice="graphite" aria-pressed="false">石墨暖灰</button>
+    </div>
+  </header>
+
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="主导航">
+      <a class="brand" href="#home" data-route-link="home" aria-label="产品经理工作台，返回工作台首页">
+        <span class="brand-mark" aria-hidden="true">PM</span>
+        <span class="brand-title">产品经理工作台</span>
+        <span class="brand-version">V1</span>
+      </a>
+      <nav class="nav">
+        <button class="nav-button" type="button" data-route="home" aria-current="page"><i data-lucide="layout-dashboard" aria-hidden="true"></i><span>工作台</span></button>
+        <button class="nav-button nav-create" type="button" data-route="chat"><i data-lucide="plus" aria-hidden="true"></i><span>新建会话</span><span class="nav-shortcut">Ctrl N</span></button>
+        <button class="nav-button" type="button" data-route="projects"><i data-lucide="folder-kanban" aria-hidden="true"></i><span>项目</span><span class="nav-count">3</span></button>
+        <button class="nav-button" type="button" data-route="tasks"><i data-lucide="list-checks" aria-hidden="true"></i><span>任务</span><span class="nav-count">1</span></button>
+      </nav>
+      <div class="sidebar-context">
+        <section class="context-section" aria-labelledby="recent-projects-label">
+          <div class="context-label" id="recent-projects-label"><span>最近项目</span><span>3</span></div>
+          <button class="project-shortcut" type="button" data-route="project"><strong>AI 产品工作台</strong><span>5 分钟前更新</span></button>
+          <button class="project-shortcut" type="button"><strong>海外定制销售工具</strong><span>昨天更新</span></button>
+        </section>
+        <section class="context-section" aria-labelledby="recent-chats-label">
+          <div class="context-label" id="recent-chats-label"><span>最近对话</span><span>4</span></div>
+          <button class="project-shortcut" type="button" data-route="chat" data-conversation="梳理产品定价方案" data-conversation-context="未关联项目 · 10 分钟前" data-assistant="通用助手" data-model="全局默认 · GPT 工作模型"><strong>梳理产品定价方案</strong><span>未关联项目 · 10 分钟前</span></button>
+          <button class="project-shortcut" type="button" data-route="chat" data-conversation="修改需求确认流程" data-conversation-context="AI 产品工作台 · 昨天" data-assistant="需求与 PRD 助手" data-model="项目默认 · deepseek-v4-pro"><strong>修改需求确认流程</strong><span>AI 产品工作台 · 昨天</span></button>
+        </section>
+      </div>
+      <div class="sidebar-footer">
+        <button class="nav-button" type="button" data-route="settings"><i data-lucide="settings" aria-hidden="true"></i><span>设置</span></button>
+      </div>
+    </aside>
+
+    <main class="main" id="main-content">
+      <section class="view active" id="view-home" data-view="home">
+        <div class="page-head">
+          <h1>工作台</h1><span class="head-spacer"></span>
+          <span class="status-chip"><span class="status-dot"></span>本地服务正常</span>
+          <button class="icon-button" type="button" aria-label="查看帮助"><i data-lucide="circle-help" aria-hidden="true"></i></button>
+        </div>
+        <div class="home">
+          <div class="home-inner">
+            <div class="eyebrow">今天从哪项产品工作开始？</div>
+            <h1>把零散想法，整理成可确认、可执行的产品方案。</h1>
+            <p class="home-lead">选择一个入口，AI 会先梳理需求并列出待确认问题；只有你确认后，才会生成正式 PRD。</p>
+            <div class="start-grid">
+              <button class="start-card" type="button" data-start="产品想法"><i data-lucide="lightbulb" aria-hidden="true"></i><strong>从产品想法开始</strong><span>梳理目标用户、场景和 MVP 范围</span></button>
+              <button class="start-card" type="button" data-start="现有资料"><i data-lucide="files" aria-hidden="true"></i><strong>导入现有资料</strong><span>从访谈、会议纪要或竞品材料提炼需求</span></button>
+              <button class="start-card" type="button" data-start="业务需求"><i data-lucide="briefcase-business" aria-hidden="true"></i><strong>分析业务需求</strong><span>识别信息缺口并整理验收范围</span></button>
+            </div>
+            <div class="composer">
+              <label class="sr-only" for="home-prompt">描述你的产品需求</label>
+              <textarea id="home-prompt" placeholder="描述一个产品想法、粘贴业务需求，或输入 / 唤起命令……"></textarea>
+              <div class="composer-actions">
+                <button class="icon-button" type="button" aria-label="添加项目资料"><i data-lucide="paperclip" aria-hidden="true"></i></button>
+                <select class="select-quiet" id="home-assistant-select" aria-label="选择助手"><option>需求与 PRD 助手</option><option>产品经理开发助手</option><option>通用助手</option></select>
+                <select class="select-quiet" id="home-model-select" aria-label="选择模型"><option>项目默认 · deepseek-v4-pro</option><option>GPT 工作模型</option></select>
+                <details class="composer-more">
+                  <summary class="icon-button" aria-label="更多设置" title="更多设置"><i data-lucide="sliders-horizontal" aria-hidden="true"></i></summary>
+                  <div class="composer-more-panel"><div class="field"><label for="home-executor-select">执行方式</label><select id="home-executor-select"><option>自动（推荐）</option><option>Codex CLI</option><option>Pi</option></select></div><p>普通 PRD 工作使用“自动”即可；项目会记住你的主动选择。</p></div>
+                </details>
+                <button class="send-button" type="button" id="home-send" aria-label="发送"><i data-lucide="arrow-up" aria-hidden="true"></i></button>
+              </div>
+            </div>
+            <div class="context-row"><i data-lucide="folder-open" aria-hidden="true"></i><span>在项目中工作：</span><strong>AI 产品工作台</strong><span>· 本次可使用 3 份资料，发送前可确认</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-project" data-view="project">
+        <div class="workspace">
+          <div class="project-header">
+            <div class="project-title"><h1>AI 产品工作台</h1><p>本地项目 · 5 分钟前保存</p></div>
+            <span class="head-spacer"></span>
+            <span class="status-chip">需求与 PRD 助手</span>
+            <span class="status-chip">项目默认 · deepseek-v4-pro</span>
+            <button class="icon-button" type="button" aria-label="更多设置"><i data-lucide="sliders-horizontal" aria-hidden="true"></i></button>
+          </div>
+          <div class="workspace-tabs" role="tablist" aria-label="项目工作区">
+            <button class="workspace-tab" type="button" role="tab" data-workspace="overview" aria-selected="false">概览</button>
+            <button class="workspace-tab" type="button" role="tab" data-workspace="materials" aria-selected="false">资料 <span class="nav-count">3</span></button>
+            <button class="workspace-tab" type="button" role="tab" data-workspace="analysis" aria-selected="true">需求分析</button>
+            <button class="workspace-tab" type="button" role="tab" data-workspace="prd" aria-selected="false">PRD</button>
+          </div>
+          <div class="workspace-body">
+            <section class="workspace-panel" data-workspace-panel="overview">
+              <div class="section-head"><div><h2>项目概览</h2><p>查看资料、分析和 PRD 的最新状态。</p></div></div>
+              <div class="list">
+                <div class="list-row"><strong>项目资料</strong><span>3 份可用</span><small>刚刚更新</small><button class="button" type="button" data-open-workspace="materials">查看资料</button></div>
+                <div class="list-row"><strong>需求分析</strong><span>待确认</span><small>5 分钟前</small><button class="button" type="button" data-open-workspace="analysis">继续分析</button></div>
+                <div class="list-row"><strong>PRD</strong><span>尚未生成</span><small>等待需求确认</small><button class="button" type="button" data-open-workspace="prd">查看 PRD</button></div>
+              </div>
+            </section>
+
+            <section class="workspace-panel" data-workspace-panel="materials">
+              <div class="section-head"><div><h2>项目资料</h2><p>这些资料会在生成需求分析前由你确认是否使用。</p></div><div class="actions"><button class="button primary" type="button"><i data-lucide="plus" aria-hidden="true"></i>添加资料</button></div></div>
+              <div class="list">
+                <div class="list-row"><strong>PRD.md</strong><span>Markdown · 18 KB</span><span class="task-state"><span class="status-dot"></span>可使用</span><button class="button" type="button">预览</button></div>
+                <div class="list-row"><strong>用户访谈纪要.docx</strong><span>Word · 146 KB</span><span class="task-state"><span class="status-dot"></span>可使用</span><button class="button" type="button">预览</button></div>
+                <div class="list-row"><strong>竞品分析.pdf</strong><span>PDF · 2.3 MB</span><span class="task-state"><span class="status-dot"></span>可使用</span><button class="button" type="button">预览</button></div>
+              </div>
+            </section>
+
+            <section class="workspace-panel active" data-workspace-panel="analysis">
+              <div class="section-head">
+                <div><h2>需求分析</h2><p>AI 先生成草稿，你编辑并确认后才能进入正式 PRD。</p></div>
+                <div class="actions"><span class="status-chip" id="analysis-status">尚未开始</span></div>
+              </div>
+              <div class="analysis-layout">
+                <div class="panel">
+                  <div class="panel-head"><strong>分析结果</strong><span class="head-spacer"></span><span class="status-chip">AI 草稿</span></div>
+                  <div class="analysis-state active" id="analysis-empty">
+                    <div class="empty-state"><div class="empty-state-inner"><i data-lucide="scan-text" aria-hidden="true"></i><h3>资料已就绪，可以开始分析</h3><p>AI 将梳理产品目标、用户场景、核心需求、MVP 范围和待确认问题。</p><button class="button accent" type="button" id="start-analysis">开始需求分析</button></div></div>
+                  </div>
+                  <div class="analysis-state" id="analysis-running">
+                    <div class="empty-state"><div class="empty-state-inner"><div class="spinner" aria-hidden="true"></div><h3>正在梳理需求</h3><p>正在读取 3 份资料并识别目标用户与信息缺口。你可以离开此页面，任务会继续运行。</p><div class="progress" role="progressbar" aria-label="需求分析进度" aria-valuenow="64" aria-valuemin="0" aria-valuemax="100"><span></span></div></div></div>
+                  </div>
+                  <div class="analysis-state" id="analysis-result">
+                    <div class="analysis-result">
+                      <div class="result-row"><label for="goal-result">产品目标</label><textarea id="goal-result">为产品经理提供一个本地优先的 AI 工作台，把想法、项目资料和业务需求整理成可确认的需求分析与结构化 PRD。</textarea></div>
+                      <div class="result-row"><label for="users-result">目标用户</label><textarea id="users-result">需要频繁整理需求、访谈材料和产品文档，但不希望在多个聊天工具和文件之间切换的产品经理。</textarea></div>
+                      <div class="result-row"><label for="scope-result">MVP 范围</label><textarea id="scope-result">项目与资料管理；三类需求入口；结构化需求分析；人工确认；PRD 生成、编辑、保存与 Markdown 导出。</textarea></div>
+                      <div class="result-row"><label for="questions-result">待确认问题</label><textarea id="questions-result">1. 已确认分析被修改后，是否自动回到待确认？&#10;2. 单章节重新生成是否先预览再替换？</textarea></div>
+                      <div class="panel-body"><div class="notice"><i data-lucide="triangle-alert" aria-hidden="true"></i><span>这是一份 AI 草稿。请检查并编辑；确认后才能生成正式 PRD。</span></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button class="button" type="button" id="reanalyze">重新分析</button><button class="button primary" type="button" id="confirm-analysis">确认分析并生成 PRD</button></div></div>
+                    </div>
+                  </div>
+                </div>
+                <aside class="panel">
+                  <div class="panel-head"><strong>本次分析依据</strong></div>
+                  <div class="panel-body">
+                    <div class="field"><label for="analysis-input">补充说明</label><textarea id="analysis-input">优先完成 Windows 本地桌面 MVP，暂不考虑团队协作和云端同步。</textarea><span class="helper">提交失败时会保留这段输入。</span></div>
+                    <div class="field"><label>使用的项目资料</label><div class="source-list"><label class="source-item"><input type="checkbox" checked><span>PRD.md</span><small>18 KB</small></label><label class="source-item"><input type="checkbox" checked><span>用户访谈纪要.docx</span><small>146 KB</small></label><label class="source-item"><input type="checkbox" checked><span>竞品分析.pdf</span><small>2.3 MB</small></label></div></div>
+                    <div class="meta-list"><div class="meta-row"><span>助手</span><strong>需求与 PRD 助手</strong></div><div class="meta-row"><span>模型</span><strong>deepseek-v4-pro</strong></div><div class="meta-row"><span>执行方式</span><strong>自动</strong></div></div>
+                  </div>
+                </aside>
+              </div>
+            </section>
+
+            <section class="workspace-panel" data-workspace-panel="prd">
+              <div class="section-head"><div><h2>PRD 工作区</h2><p>基于已确认需求生成，并持续自动保存。</p></div><div class="actions"><span class="save-indicator" id="save-status"><i data-lucide="check" aria-hidden="true"></i>已保存</span><button class="button" type="button"><i data-lucide="download" aria-hidden="true"></i>导出 Markdown</button></div></div>
+              <div class="prd-layout">
+                <nav class="toc" aria-label="PRD 章节"><button type="button" aria-current="true">产品背景</button><button type="button">产品目标</button><button type="button">目标用户</button><button type="button">核心场景</button><button type="button">功能范围</button><button type="button">业务流程</button><button type="button">功能需求</button><button type="button">非功能要求</button><button type="button">验收标准</button></nav>
+                <article class="document" id="prd-document">
+                  <h1 contenteditable="true">产品经理 AI 工作台 V1.0</h1>
+                  <p contenteditable="true">一款面向产品经理的本地优先桌面应用，用 AI 协助整理需求、确认范围并生成结构化 PRD。</p>
+                  <h2 contenteditable="true">1. 产品背景</h2>
+                  <p contenteditable="true">产品经理的想法、访谈、会议纪要和业务需求通常分散在多个工具中。信息需要被重复整理，AI 对话结果也难以沉淀到项目上下文。</p>
+                  <h2 contenteditable="true">2. 产品目标</h2>
+                  <ul contenteditable="true"><li>将想法、资料和业务需求统一纳入项目。</li><li>先输出可编辑需求分析，由用户确认关键事实。</li><li>基于已确认内容生成并维护 PRD。</li></ul>
+                  <h2 contenteditable="true">3. MVP 范围</h2>
+                  <p contenteditable="true">项目与资料管理、需求分析、人工确认、PRD 生成与编辑、任务恢复、模型配置和 Markdown 导出。</p>
+                </article>
+                <aside class="chapter-actions"><button class="button" type="button" id="regenerate"><i data-lucide="refresh-cw" aria-hidden="true"></i>重新生成本章节</button><button class="button" type="button"><i data-lucide="message-square-text" aria-hidden="true"></i>查看生成依据</button><div class="panel"><div class="panel-body"><strong>章节状态</strong><div class="meta-list" style="margin-top:10px"><div class="meta-row"><span>来源</span><strong>已确认分析</strong></div><div class="meta-row"><span>最近保存</span><strong>刚刚</strong></div><div class="meta-row"><span>编辑状态</span><strong>可编辑</strong></div></div></div></div></aside>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-tasks" data-view="tasks">
+        <div class="page-head"><h1>任务中心</h1><span class="head-spacer"></span><button class="button" type="button"><i data-lucide="rotate-cw" aria-hidden="true"></i>刷新状态</button></div>
+        <div class="simple-page"><div class="section-head"><div><h2>最近任务</h2><p>AionCore 返回的状态是最终事实来源。</p></div></div><div class="list"><div class="list-row"><strong>需求分析</strong><span>AI 产品工作台</span><span class="task-state"><span class="status-dot"></span>等待确认</span><button class="button" type="button" data-route="project">打开</button></div><div class="list-row"><strong>解析用户访谈纪要</strong><span>AI 产品工作台</span><span class="task-state"><span class="status-dot"></span>已完成</span><button class="button" type="button">查看结果</button></div><div class="list-row"><strong>生成 PRD</strong><span>海外定制销售工具</span><span class="task-state" style="color:var(--danger)">失败，可重试</span><button class="button" type="button">查看原因</button></div></div></div>
+      </section>
+
+      <section class="view" id="view-settings" data-view="settings">
+        <div class="page-head"><h1>设置</h1></div>
+        <div class="simple-page"><div class="settings-grid panel"><div class="setting-row"><div><h3>模型服务</h3><p>模型 Key 仅脱敏显示。</p></div><div class="field"><label for="model-select">默认模型</label><select id="model-select"><option>deepseek-v4-pro</option><option>GPT 工作模型</option></select></div></div><div class="setting-row"><div><h3>执行方式</h3><p>默认隐藏在更多设置中。</p></div><div class="field"><label for="executor-select">默认执行器</label><select id="executor-select"><option>自动</option><option>Codex CLI</option><option>Pi</option></select></div></div><div class="setting-row"><div><h3>本地数据</h3><p>项目和对话保存在当前电脑。</p></div><div><button class="button" type="button">查看存储位置</button></div></div></div></div>
+      </section>
+
+      <section class="view" id="view-chat" data-view="chat">
+        <div class="page-head"><h1 id="chat-title">新会话</h1><span class="head-spacer"></span><span class="status-chip" id="chat-context">未关联项目</span><span class="status-chip" id="chat-assistant-chip">需求与 PRD 助手</span></div>
+        <div class="home"><div class="home-inner"><div class="eyebrow">临时问答或关联项目</div><h1 id="chat-heading">有什么产品问题需要一起梳理？</h1><p class="home-lead" id="chat-lead">关联项目后，发送前会明确告诉你本次将使用哪些项目资料。</p><div class="composer"><label class="sr-only" for="chat-prompt">输入会话内容</label><textarea id="chat-prompt" placeholder="输入消息，或粘贴需要分析的内容……"></textarea><div class="composer-actions"><button class="icon-button" type="button" aria-label="添加附件"><i data-lucide="paperclip" aria-hidden="true"></i></button><select class="select-quiet" id="chat-project-select" aria-label="关联项目"><option value="none">不关联项目</option><option value="AI 产品工作台">AI 产品工作台</option></select><select class="select-quiet" id="chat-assistant-select" aria-label="选择助手"><option>需求与 PRD 助手</option><option>产品经理开发助手</option><option>通用助手</option></select><select class="select-quiet" id="chat-model-select" aria-label="选择模型"><option>全局默认 · GPT 工作模型</option><option>项目默认 · deepseek-v4-pro</option></select><details class="composer-more"><summary class="icon-button" aria-label="更多设置" title="更多设置"><i data-lucide="sliders-horizontal" aria-hidden="true"></i></summary><div class="composer-more-panel"><div class="field"><label for="chat-executor-select">执行方式</label><select id="chat-executor-select"><option>自动（推荐）</option><option>Codex CLI</option><option>Pi</option></select></div><p>执行器不可用时会说明原因，并允许切回“自动”。</p></div></details><button class="send-button" type="button" aria-label="发送"><i data-lucide="arrow-up" aria-hidden="true"></i></button></div></div><div class="context-row" id="chat-context-row"><i data-lucide="shield-check" aria-hidden="true"></i><span>未关联项目；本次不会自动使用项目资料。</span></div></div></div>
+      </section>
+
+      <section class="view" id="view-projects" data-view="projects">
+        <div class="page-head"><h1>项目</h1><span class="head-spacer"></span><button class="button primary" type="button"><i data-lucide="plus" aria-hidden="true"></i>创建项目</button></div>
+        <div class="simple-page"><div class="list"><div class="list-row"><strong>AI 产品工作台</strong><span>3 份资料</span><small>5 分钟前更新</small><button class="button" type="button" data-route="project">打开</button></div><div class="list-row"><strong>海外定制销售工具</strong><span>5 份资料</span><small>昨天更新</small><button class="button" type="button">打开</button></div><div class="list-row"><strong>AI 游戏工作台</strong><span>2 份资料</span><small>3 天前更新</small><button class="button" type="button">打开</button></div></div></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"><i data-lucide="circle-check" aria-hidden="true"></i><span id="toast-message">操作已完成</span></div>
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <script>
+    (() => {
+      const body = document.body;
+      const views = [...document.querySelectorAll('[data-view]')];
+      const navButtons = [...document.querySelectorAll('.nav [data-route], .sidebar-footer [data-route]')];
+      const workspaceTabs = [...document.querySelectorAll('[data-workspace]')];
+      const workspacePanels = [...document.querySelectorAll('[data-workspace-panel]')];
+      const toast = document.getElementById('toast');
+      let toastTimer;
+
+      function renderIcons() {
+        if (window.lucide) window.lucide.createIcons({ attrs: { 'aria-hidden': 'true' } });
+      }
+
+      function showToast(message) {
+        document.getElementById('toast-message').textContent = message;
+        toast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
+      }
+
+      function showView(route) {
+        const target = route === 'project' ? 'project' : route;
+        views.forEach(view => view.classList.toggle('active', view.dataset.view === target));
+        navButtons.forEach(button => {
+          const current = button.dataset.route === route || (route === 'project' && button.dataset.route === 'projects');
+          if (current) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current');
+        });
+        document.querySelector('.main').scrollTop = 0;
+      }
+
+      function showWorkspace(name) {
+        showView('project');
+        workspaceTabs.forEach(tab => tab.setAttribute('aria-selected', String(tab.dataset.workspace === name)));
+        workspacePanels.forEach(panel => panel.classList.toggle('active', panel.dataset.workspacePanel === name));
+        document.querySelector('.main').scrollTop = 0;
+      }
+
+      function openConversation(title, context, assistant = '需求与 PRD 助手', model = '全局默认 · GPT 工作模型') {
+        showView('chat');
+        const linkedProject = context?.startsWith('AI 产品工作台');
+        document.getElementById('chat-title').textContent = title || '新会话';
+        document.getElementById('chat-heading').textContent = title ? `继续：${title}` : '有什么产品问题需要一起梳理？';
+        document.getElementById('chat-context').textContent = linkedProject ? 'AI 产品工作台' : '未关联项目';
+        document.getElementById('chat-assistant-chip').textContent = assistant;
+        document.getElementById('chat-project-select').value = linkedProject ? 'AI 产品工作台' : 'none';
+        document.getElementById('chat-assistant-select').value = assistant;
+        document.getElementById('chat-model-select').value = model;
+        document.getElementById('chat-context-row').querySelector('span').textContent = linkedProject
+          ? '本次可使用 AI 产品工作台中的 3 份资料，发送前可确认。'
+          : '未关联项目；本次不会自动使用项目资料。';
+        document.getElementById('chat-lead').textContent = title
+          ? `已恢复这条会话的消息、助手、模型和${context?.startsWith('未关联项目') ? '未关联项目状态' : '项目关联'}。`
+          : '关联项目后，发送前会明确告诉你本次将使用哪些项目资料。';
+      }
+
+      document.querySelectorAll('[data-route], [data-route-link]').forEach(control => {
+        control.addEventListener('click', event => {
+          event.preventDefault();
+          const route = control.dataset.route || control.dataset.routeLink;
+          if (control.dataset.conversation) openConversation(control.dataset.conversation, control.dataset.conversationContext, control.dataset.assistant, control.dataset.model);
+          else if (route === 'chat') openConversation('', '');
+          else showView(route);
+        });
+      });
+
+      workspaceTabs.forEach(tab => tab.addEventListener('click', () => showWorkspace(tab.dataset.workspace)));
+      document.querySelectorAll('[data-open-workspace]').forEach(button => button.addEventListener('click', () => showWorkspace(button.dataset.openWorkspace)));
+
+      document.getElementById('chat-project-select').addEventListener('change', event => {
+        const linkedProject = event.target.value === 'AI 产品工作台';
+        document.getElementById('chat-context').textContent = linkedProject ? 'AI 产品工作台' : '未关联项目';
+        document.getElementById('chat-model-select').value = linkedProject ? '项目默认 · deepseek-v4-pro' : '全局默认 · GPT 工作模型';
+        document.getElementById('chat-context-row').querySelector('span').textContent = linkedProject
+          ? '本次可使用 AI 产品工作台中的 3 份资料，发送前可确认。'
+          : '未关联项目；本次不会自动使用项目资料。';
+      });
+
+      document.getElementById('chat-assistant-select').addEventListener('change', event => {
+        document.getElementById('chat-assistant-chip').textContent = event.target.value;
+      });
+
+      document.addEventListener('keydown', event => {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'n') {
+          event.preventDefault();
+          openConversation('', '');
+          document.getElementById('chat-prompt').focus();
+        }
+      });
+
+      document.querySelectorAll('[data-theme-choice]').forEach(button => {
+        button.addEventListener('click', () => {
+          body.dataset.theme = button.dataset.themeChoice;
+          document.querySelectorAll('[data-theme-choice]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+        });
+      });
+
+      document.querySelectorAll('[data-start]').forEach(button => {
+        button.addEventListener('click', () => {
+          showWorkspace('analysis');
+          document.getElementById('analysis-input').value = `从“${button.dataset.start}”开始，请先梳理目标用户、核心场景、痛点、需求和 MVP 范围。`;
+        });
+      });
+
+      document.getElementById('home-send').addEventListener('click', () => {
+        const prompt = document.getElementById('home-prompt');
+        if (!prompt.value.trim()) {
+          prompt.focus();
+          showToast('请先描述产品想法或业务需求');
+          return;
+        }
+        showWorkspace('analysis');
+        document.getElementById('analysis-input').value = prompt.value.trim();
+      });
+
+      function setAnalysisState(name) {
+        document.querySelectorAll('.analysis-state').forEach(section => section.classList.remove('active'));
+        document.getElementById(`analysis-${name}`).classList.add('active');
+        const labels = { empty: '尚未开始', running: '正在分析', result: '待确认' };
+        document.getElementById('analysis-status').textContent = labels[name];
+      }
+
+      document.getElementById('start-analysis').addEventListener('click', () => {
+        setAnalysisState('running');
+        setTimeout(() => { setAnalysisState('result'); showToast('需求分析已生成，请检查并确认'); }, 1300);
+      });
+      document.getElementById('reanalyze').addEventListener('click', () => {
+        setAnalysisState('running');
+        setTimeout(() => { setAnalysisState('result'); showToast('已生成新分析，原输入仍保留'); }, 1000);
+      });
+      document.getElementById('confirm-analysis').addEventListener('click', () => {
+        showWorkspace('prd');
+        showToast('需求分析已确认，PRD 已生成并保存');
+      });
+
+      let saveTimer;
+      document.getElementById('prd-document').addEventListener('input', () => {
+        const status = document.getElementById('save-status');
+        status.textContent = '保存中…';
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => { status.textContent = '已保存'; }, 700);
+      });
+      document.getElementById('regenerate').addEventListener('click', () => showToast('原型规则：先生成预览，再由用户确认是否替换'));
+
+      renderIcons();
+    })();
+  </script>
+</body>
+</html>
