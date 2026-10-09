@@ -331,6 +331,26 @@ mod tests {
     }
 
     #[test]
+    fn embedded_product_workbench_assistants_have_localized_rules() {
+        let reg = BuiltinAssistantRegistry::load_embedded();
+
+        for assistant_id in ["product-development", "general-assistant"] {
+            let assistant = reg
+                .get(assistant_id)
+                .unwrap_or_else(|| panic!("{assistant_id} should be shipped"));
+            assert!(assistant.default_enabled);
+
+            for locale in ["en-US", "zh-CN"] {
+                let bytes = reg
+                    .rule_bytes(assistant_id, locale)
+                    .unwrap_or_else(|| panic!("{locale} {assistant_id} rule should be shipped"));
+                let text = std::str::from_utf8(&bytes).expect("rule file should be valid utf-8");
+                assert!(text.len() > 300, "rule file should contain real guidance");
+            }
+        }
+    }
+
+    #[test]
     fn embedded_rule_missing_locale_returns_none() {
         let reg = BuiltinAssistantRegistry::load_embedded();
         // The manifest declares rule_file as "rules/{id}.{locale}.md"; a

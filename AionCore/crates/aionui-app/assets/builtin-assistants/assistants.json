@@ -41,6 +41,84 @@
       "models": []
     },
     {
+      "id": "product-development",
+      "sort_order": -9,
+      "default_enabled": true,
+      "name": "Product Development Assistant",
+      "name_i18n": {
+        "en-US": "Product Development Assistant",
+        "zh-CN": "产品经理开发助手"
+      },
+      "description": "Turn confirmed product requirements into implementation plans, development tasks, tests, and release checklists.",
+      "description_i18n": {
+        "en-US": "Turn confirmed product requirements into implementation plans, development tasks, tests, and release checklists.",
+        "zh-CN": "将已确认的产品需求整理为实现方案、开发任务、测试计划和发布清单。"
+      },
+      "avatar": "🛠️",
+      "agent_ref": "aionrs",
+      "enabled_skills": [],
+      "custom_skill_names": [],
+      "disabled_builtin_skills": [],
+      "rule_file": "rules/product-development.{locale}.md",
+      "prompts": [
+        "Turn this confirmed PRD into a phased development plan with acceptance gates",
+        "Break this feature into frontend, backend, data, and test tasks",
+        "Review the implementation status and list the next verifiable development steps"
+      ],
+      "prompts_i18n": {
+        "en-US": [
+          "Turn this confirmed PRD into a phased development plan with acceptance gates",
+          "Break this feature into frontend, backend, data, and test tasks",
+          "Review the implementation status and list the next verifiable development steps"
+        ],
+        "zh-CN": [
+          "把这份已确认的 PRD 拆成分阶段开发计划和验收门槛",
+          "把这个功能拆成前端、后端、数据和测试任务",
+          "检查当前实现进度并列出下一批可验证的开发步骤"
+        ]
+      },
+      "models": []
+    },
+    {
+      "id": "general-assistant",
+      "sort_order": -8,
+      "default_enabled": true,
+      "name": "General Assistant",
+      "name_i18n": {
+        "en-US": "General Assistant",
+        "zh-CN": "通用助手"
+      },
+      "description": "Handle general questions and lightweight tasks that do not require a specialized product workflow.",
+      "description_i18n": {
+        "en-US": "Handle general questions and lightweight tasks that do not require a specialized product workflow.",
+        "zh-CN": "处理不需要产品专用流程的一般问答和轻量任务。"
+      },
+      "avatar": "✨",
+      "agent_ref": "aionrs",
+      "enabled_skills": [],
+      "custom_skill_names": [],
+      "disabled_builtin_skills": [],
+      "rule_file": "rules/general-assistant.{locale}.md",
+      "prompts": [
+        "Summarize this material and list the key points",
+        "Help me compare these options and explain the tradeoffs",
+        "Turn these notes into a clear action list"
+      ],
+      "prompts_i18n": {
+        "en-US": [
+          "Summarize this material and list the key points",
+          "Help me compare these options and explain the tradeoffs",
+          "Turn these notes into a clear action list"
+        ],
+        "zh-CN": [
+          "总结这份资料并列出重点",
+          "帮我比较这些方案并说明取舍",
+          "把这些笔记整理成清晰的行动清单"
+        ]
+      },
+      "models": []
+    },
+    {
       "id": "word-creator",
       "sort_order": 10,
       "default_enabled": false,

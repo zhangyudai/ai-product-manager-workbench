@@ -107,6 +107,27 @@ pub struct ProjectExplorerRow {
     pub updated_at: TimestampMs,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+pub struct ProjectRequirementAnalysisRow {
+    pub project_id: String,
+    pub source_text: String,
+    pub content: String,
+    pub status: String,
+    pub confirmed_by: Option<String>,
+    pub confirmed_at: Option<TimestampMs>,
+    pub created_at: TimestampMs,
+    pub updated_at: TimestampMs,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+pub struct ProjectPrdRow {
+    pub project_id: String,
+    pub title: String,
+    pub content: String,
+    pub created_at: TimestampMs,
+    pub updated_at: TimestampMs,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

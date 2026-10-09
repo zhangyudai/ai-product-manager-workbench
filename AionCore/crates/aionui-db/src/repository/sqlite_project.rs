@@ -2,7 +2,9 @@ use aionui_common::{generate_prefixed_id, now_ms};
 use sqlx::{Row, SqlitePool};
 
 use crate::error::DbError;
-use crate::models::{FolderRow, ProjectExplorerRow, ProjectKind, ProjectRow};
+use crate::models::{
+    FolderRow, ProjectExplorerRow, ProjectKind, ProjectPrdRow, ProjectRequirementAnalysisRow, ProjectRow,
+};
 use crate::repository::project::IProjectStore;
 
 /// SQLite-backed implementation of [`IProjectStore`].
@@ -20,6 +22,9 @@ impl SqliteProjectStore {
 const FOLDER_COLS: &str = "folder_id, resource_uri, resource_canonical, created_at, updated_at";
 const PROJECT_COLS: &str = "project_id, name, kind, created_at, updated_at";
 const ENTRY_COLS: &str = "pe_id, project_id, folder_id, role, display_name, order_index, created_at, updated_at";
+const ANALYSIS_COLS: &str =
+    "project_id, source_text, content, status, confirmed_by, confirmed_at, created_at, updated_at";
+const PRD_COLS: &str = "project_id, title, content, created_at, updated_at";
 
 #[async_trait::async_trait]
 impl IProjectStore for SqliteProjectStore {
@@ -66,6 +71,166 @@ impl IProjectStore for SqliteProjectStore {
         .fetch_optional(&self.pool)
         .await?;
         Ok(row)
+    }
+
+    async fn list_standard_projects(&self, user_id: &str) -> Result<Vec<(ProjectRow, FolderRow)>, DbError> {
+        let rows = sqlx::query(
+            "SELECT p.project_id, p.name, p.kind, p.created_at, p.updated_at, \
+                    f.folder_id, f.resource_uri, f.resource_canonical, \
+                    f.created_at AS f_created_at, f.updated_at AS f_updated_at \
+             FROM projects p \
+             JOIN project_explorer pe ON pe.project_id = p.project_id AND pe.role = 'workspace' \
+             JOIN folders f ON f.folder_id = pe.folder_id \
+             WHERE p.user_id = ? AND pe.owner_user_id = ? AND p.kind = 'standard' \
+             ORDER BY p.updated_at DESC, p.created_at DESC",
+        )
+        .bind(user_id)
+        .bind(user_id)
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rows
+            .into_iter()
+            .map(|row| {
+                let project = ProjectRow {
+                    project_id: row.get("project_id"),
+                    name: row.get("name"),
+                    kind: row.get("kind"),
+                    created_at: row.get("created_at"),
+                    updated_at: row.get("updated_at"),
+                };
+                let folder = FolderRow {
+                    folder_id: row.get("folder_id"),
+                    resource_uri: row.get("resource_uri"),
+                    resource_canonical: row.get("resource_canonical"),
+                    created_at: row.get("f_created_at"),
+                    updated_at: row.get("f_updated_at"),
+                };
+                (project, folder)
+            })
+            .collect())
+    }
+
+    async fn rename_project(&self, user_id: &str, project_id: &str, name: &str) -> Result<Option<ProjectRow>, DbError> {
+        sqlx::query("UPDATE projects SET name = ?, updated_at = ? WHERE project_id = ? AND user_id = ?")
+            .bind(name)
+            .bind(now_ms())
+            .bind(project_id)
+            .bind(user_id)
+            .execute(&self.pool)
+            .await?;
+        self.get_project(user_id, project_id).await
+    }
+
+    async fn touch_project(&self, user_id: &str, project_id: &str) -> Result<Option<ProjectRow>, DbError> {
+        sqlx::query("UPDATE projects SET updated_at = ? WHERE project_id = ? AND user_id = ?")
+            .bind(now_ms())
+            .bind(project_id)
+            .bind(user_id)
+            .execute(&self.pool)
+            .await?;
+        self.get_project(user_id, project_id).await
+    }
+
+    async fn get_requirement_analysis(
+        &self,
+        user_id: &str,
+        project_id: &str,
+    ) -> Result<Option<ProjectRequirementAnalysisRow>, DbError> {
+        Ok(sqlx::query_as::<_, ProjectRequirementAnalysisRow>(&format!(
+            "SELECT {ANALYSIS_COLS} FROM project_requirement_analyses WHERE project_id = ? AND owner_user_id = ?"
+        ))
+        .bind(project_id)
+        .bind(user_id)
+        .fetch_optional(&self.pool)
+        .await?)
+    }
+
+    async fn save_requirement_analysis(
+        &self,
+        user_id: &str,
+        project_id: &str,
+        source_text: &str,
+        content: &str,
+    ) -> Result<ProjectRequirementAnalysisRow, DbError> {
+        let now = now_ms();
+        sqlx::query(
+            "INSERT INTO project_requirement_analyses \
+             (project_id, owner_user_id, source_text, content, status, confirmed_by, confirmed_at, created_at, updated_at) \
+             SELECT project_id, user_id, ?, ?, 'draft', NULL, NULL, ?, ? FROM projects \
+             WHERE project_id = ? AND user_id = ? \
+             ON CONFLICT(project_id) DO UPDATE SET source_text = excluded.source_text, content = excluded.content, \
+             status = 'draft', confirmed_by = NULL, confirmed_at = NULL, updated_at = excluded.updated_at \
+             WHERE owner_user_id = excluded.owner_user_id",
+        )
+        .bind(source_text)
+        .bind(content)
+        .bind(now)
+        .bind(now)
+        .bind(project_id)
+        .bind(user_id)
+        .execute(&self.pool)
+        .await?;
+        self.get_requirement_analysis(user_id, project_id)
+            .await?
+            .ok_or_else(|| DbError::NotFound(format!("project {project_id}")))
+    }
+
+    async fn confirm_requirement_analysis(
+        &self,
+        user_id: &str,
+        project_id: &str,
+    ) -> Result<Option<ProjectRequirementAnalysisRow>, DbError> {
+        let now = now_ms();
+        sqlx::query(
+            "UPDATE project_requirement_analyses SET status = 'confirmed', confirmed_by = ?, confirmed_at = ?, \
+             updated_at = ? WHERE project_id = ? AND owner_user_id = ?",
+        )
+        .bind(user_id)
+        .bind(now)
+        .bind(now)
+        .bind(project_id)
+        .bind(user_id)
+        .execute(&self.pool)
+        .await?;
+        self.get_requirement_analysis(user_id, project_id).await
+    }
+
+    async fn get_project_prd(&self, user_id: &str, project_id: &str) -> Result<Option<ProjectPrdRow>, DbError> {
+        Ok(sqlx::query_as::<_, ProjectPrdRow>(&format!(
+            "SELECT {PRD_COLS} FROM project_prds WHERE project_id = ? AND owner_user_id = ?"
+        ))
+        .bind(project_id)
+        .bind(user_id)
+        .fetch_optional(&self.pool)
+        .await?)
+    }
+
+    async fn save_project_prd(
+        &self,
+        user_id: &str,
+        project_id: &str,
+        title: &str,
+        content: &str,
+    ) -> Result<ProjectPrdRow, DbError> {
+        let now = now_ms();
+        sqlx::query(
+            "INSERT INTO project_prds (project_id, owner_user_id, title, content, created_at, updated_at) \
+             SELECT project_id, user_id, ?, ?, ?, ? FROM projects WHERE project_id = ? AND user_id = ? \
+             ON CONFLICT(project_id) DO UPDATE SET title = excluded.title, content = excluded.content, \
+             updated_at = excluded.updated_at WHERE owner_user_id = excluded.owner_user_id",
+        )
+        .bind(title)
+        .bind(content)
+        .bind(now)
+        .bind(now)
+        .bind(project_id)
+        .bind(user_id)
+        .execute(&self.pool)
+        .await?;
+        self.get_project_prd(user_id, project_id)
+            .await?
+            .ok_or_else(|| DbError::NotFound(format!("project {project_id}")))
     }
 
     async fn select_workspace_entry_by_folder(

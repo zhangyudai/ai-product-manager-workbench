@@ -7,6 +7,8 @@ import { useAuth } from '@renderer/hooks/context/AuthContext';
 import { TEAM_MODE_ENABLED } from '@/common/config/constants';
 const Conversation = React.lazy(() => import('@renderer/pages/conversation'));
 const Guid = React.lazy(() => import('@renderer/pages/guid'));
+const ProjectsPage = React.lazy(() => import('@renderer/pages/projects'));
+const ProjectWorkspacePage = React.lazy(() => import('@renderer/pages/projects/ProjectWorkspacePage'));
 const ModelBench = React.lazy(() => import('@renderer/pages/ModelBench'));
 const AgentSettings = React.lazy(() => import('@renderer/pages/settings/AgentSettings'));
 const AgentRepairPage = React.lazy(() => import('@renderer/pages/settings/AgentSettings/AgentRepairPage'));
@@ -70,11 +72,14 @@ const PanelRoute: React.FC<{ layout: React.ReactElement }> = ({ layout }) => {
       <Routes>
         <Route
           path='/login'
-          element={status === 'authenticated' ? <Navigate to='/guid' replace /> : withRouteFallback(LoginPage)}
+          element={status === 'authenticated' ? <Navigate to='/workbench' replace /> : withRouteFallback(LoginPage)}
         />
         <Route element={<ProtectedLayout layout={layout} />}>
-          <Route index element={<Navigate to='/guid' replace />} />
+          <Route index element={<Navigate to='/workbench' replace />} />
+          <Route path='/workbench' element={withRouteFallback(Guid)} />
           <Route path='/guid' element={withRouteFallback(Guid)} />
+          <Route path='/projects' element={withRouteFallback(ProjectsPage)} />
+          <Route path='/projects/:id' element={withRouteFallback(ProjectWorkspacePage)} />
           <Route path='/model-bench' element={withRouteFallback(ModelBench)} />
           <Route path='/conversation/:id' element={withRouteFallback(Conversation)} />
           <Route
@@ -113,7 +118,7 @@ const PanelRoute: React.FC<{ layout: React.ReactElement }> = ({ layout }) => {
           <Route path='/scheduled' element={withRouteFallback(ScheduledTasksPage)} />
           <Route path='/scheduled/:job_id' element={withRouteFallback(TaskDetailPage)} />
         </Route>
-        <Route path='*' element={<Navigate to={status === 'authenticated' ? '/guid' : '/login'} replace />} />
+        <Route path='*' element={<Navigate to={status === 'authenticated' ? '/workbench' : '/login'} replace />} />
       </Routes>
     </HashRouter>
   );

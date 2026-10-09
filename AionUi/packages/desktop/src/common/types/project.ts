@@ -46,6 +46,46 @@ export type ProjectDetailDto = {
   };
 };
 
+export type ProjectSummaryDto = {
+  project_id: string;
+  name: string;
+  workspace_path: string;
+  created_at: number;
+  updated_at: number;
+};
+
+export type CreateProjectRequest = {
+  name: string;
+  workspace_uri: string;
+};
+
+export type ProjectRequirementAnalysisDto = {
+  project_id: string;
+  source_text: string;
+  content: string;
+  status: 'draft' | 'confirmed';
+  confirmed_by?: string | null;
+  confirmed_at?: number | null;
+  updated_at: number;
+};
+
+export type SaveProjectRequirementAnalysisRequest = {
+  source_text: string;
+  content: string;
+};
+
+export type ProjectPrdDto = {
+  project_id: string;
+  title: string;
+  content: string;
+  updated_at: number;
+};
+
+export type SaveProjectPrdRequest = {
+  title: string;
+  content: string;
+};
+
 /** `POST /api/projects/{id}/folders` request body. `uri` is a `file://…` URI. */
 export type AttachFolderRequest = {
   uri: string;

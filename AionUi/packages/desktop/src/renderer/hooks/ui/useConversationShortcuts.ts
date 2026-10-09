@@ -33,8 +33,9 @@ const isConversationTabShortcut = (event: KeyboardEvent): boolean => {
   return event.ctrlKey && !event.metaKey && !event.altKey && event.key === 'Tab';
 };
 
-const isNewConversationShortcut = (event: KeyboardEvent): boolean => {
-  return isPlatformPrimaryModifier(event) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 't';
+export const isNewConversationShortcut = (event: KeyboardEvent): boolean => {
+  const key = event.key.toLowerCase();
+  return isPlatformPrimaryModifier(event) && !event.altKey && !event.shiftKey && (key === 'n' || key === 't');
 };
 
 export const useConversationShortcuts = ({ navigate, toggleSider }: UseConversationShortcutsParams): void => {

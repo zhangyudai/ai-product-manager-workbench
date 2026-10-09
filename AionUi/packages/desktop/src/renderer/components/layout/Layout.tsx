@@ -9,7 +9,7 @@ import { APP_DISPLAY_NAME, APP_MONOGRAM } from '@/common/branding';
 import { TEAM_MODE_ENABLED } from '@/common/config/constants';
 import PwaPullToRefresh from '@/renderer/components/layout/PwaPullToRefresh';
 import Titlebar from '@/renderer/components/layout/Titlebar';
-import { Layout as ArcoLayout, Tooltip } from '@arco-design/web-react';
+import { Layout as ArcoLayout } from '@arco-design/web-react';
 import classNames from 'classnames';
 import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -62,7 +62,7 @@ const SidebarIcon: React.FC<{ size?: number; strokeWidth?: number }> = ({ size =
 
 const useDebug = () => {
   const [count, setCount] = useState(0);
-  const timer = useRef<any>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const onClick = () => {
     const open = () => {
       ipcBridge.application.openDevTools.invoke().catch((error) => {
@@ -125,7 +125,7 @@ const Layout: React.FC<{
   const [viewportWidth, setViewportWidth] = useState<number>(() =>
     typeof window === 'undefined' ? 390 : window.innerWidth
   );
-  const { onClick } = useDebug();
+  const { onClick: onDebugClick } = useDebug();
   useDeepLink();
   useNotificationClick();
   useBrowserNotification();
@@ -133,7 +133,9 @@ const Layout: React.FC<{
   const navigate = useNavigate();
   const location = useLocation();
   const workspaceAvailable =
-    location.pathname.startsWith('/conversation/') || (TEAM_MODE_ENABLED && location.pathname.startsWith('/team/'));
+    location.pathname.startsWith('/conversation/') ||
+    location.pathname.startsWith('/projects/') ||
+    (TEAM_MODE_ENABLED && location.pathname.startsWith('/team/'));
   const toggleSider = useCallback(() => {
     setCollapsed((previous) => !previous);
   }, []);
@@ -145,25 +147,8 @@ const Layout: React.FC<{
     return () => setGlobalNavigate(null);
   }, [navigate]);
   const { t } = useTranslation();
-  // The "AionUi" wordmark acts as Home / Back-to-Chat, but only from settings routes.
-  // In non-settings routes the user is already "home", so it is a no-op (and not actionable).
-  const isSettingsRoute = location.pathname.startsWith('/settings');
-  // Only wired to the wordmark in the isSettingsRoute branch below, so the
-  // "no-op outside settings" contract is enforced structurally — no internal
-  // route guard needed (the chat-route wordmark is a plain, inert div).
   const handleBrandHome = useCallback(() => {
-    // Mirror Titlebar's handleBackToChat convention: return to the last non-settings path.
-    let target: string | null = null;
-    try {
-      target = sessionStorage.getItem('aion:last-non-settings-path');
-    } catch {
-      // ignore
-    }
-    if (target && !target.startsWith('/settings')) {
-      void navigate(target);
-      return;
-    }
-    void navigate('/guid');
+    void navigate('/workbench');
   }, [navigate]);
   // Close preview whenever the user leaves the conversation route entirely
   // (e.g. switches to a team, /guid, or settings). Within /conversation/:id
@@ -400,42 +385,41 @@ const Layout: React.FC<{
                 )}
               >
                 <div
-                  className={classNames('bg-black shrink-0 size-32px relative rd-0.5rem', {
-                    '!size-24px': collapsed,
-                  })}
-                  onClick={onClick}
+                  role='button'
+                  tabIndex={0}
+                  aria-label={t('conversation.workbench.brandHomeLabel')}
+                  className='flex min-w-0 items-center gap-12px cursor-pointer'
+                  onClick={handleBrandHome}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      handleBrandHome();
+                    }
+                  }}
                 >
-                  <span
-                    className={classNames(
-                      'brand-monogram absolute inset-0 flex items-center justify-center text-white font-bold leading-none select-none',
-                      collapsed ? 'text-11px' : 'text-15px'
-                    )}
-                    aria-hidden='true'
+                  <div
+                    className={classNames('bg-black shrink-0 size-32px relative rd-0.5rem', {
+                      '!size-24px': collapsed,
+                    })}
+                    onClick={onDebugClick}
                   >
-                    {APP_MONOGRAM}
-                  </span>
-                </div>
-                {isSettingsRoute ? (
-                  <Tooltip content={t('common.back', { defaultValue: 'Back to Chat' })} position='bottom'>
-                    <div
-                      className='text-16px text-t-primary collapsed-hidden font-semibold cursor-pointer'
-                      role='button'
-                      tabIndex={0}
-                      aria-label={t('common.back', { defaultValue: 'Back to Chat' })}
-                      onClick={handleBrandHome}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          handleBrandHome();
-                        }
-                      }}
+                    <span
+                      className={classNames(
+                        'brand-monogram absolute inset-0 flex items-center justify-center text-white font-bold leading-none select-none',
+                        collapsed ? 'text-11px' : 'text-15px'
+                      )}
+                      aria-hidden='true'
                     >
-                      {APP_DISPLAY_NAME}
-                    </div>
-                  </Tooltip>
-                ) : (
-                  <div className='text-16px text-t-primary collapsed-hidden font-semibold'>{APP_DISPLAY_NAME}</div>
-                )}
+                      {APP_MONOGRAM}
+                    </span>
+                  </div>
+                  {!collapsed && (
+                    <>
+                      <span className='truncate text-16px text-t-primary font-semibold'>{APP_DISPLAY_NAME}</span>
+                      <span className='shrink-0 text-12px text-t-tertiary'>V1.1</span>
+                    </>
+                  )}
+                </div>
                 {isMobile && !collapsed && (
                   <button
                     type='button'
@@ -450,14 +434,14 @@ const Layout: React.FC<{
                 {/* 侧栏折叠改由标题栏统一控制 / Sidebar folding handled by Titlebar toggle */}
               </ArcoLayout.Header>
               <ArcoLayout.Content className='pt-0 px-8px pb-0 layout-sider-content'>
-                {React.isValidElement(sider)
+                {React.isValidElement<{ onSessionClick?: () => void; collapsed?: boolean }>(sider)
                   ? React.cloneElement(sider, {
                       onSessionClick: () => {
                         cleanupSiderTooltips();
                         if (isMobile) setCollapsed(true);
                       },
                       collapsed,
-                    } as any)
+                    })
                   : sider}
               </ArcoLayout.Content>
               {!isMobile &&

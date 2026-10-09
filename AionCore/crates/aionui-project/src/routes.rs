@@ -19,15 +19,16 @@
 use std::sync::Arc;
 
 use aionui_api_types::{
-    ApiResponse, AttachFolderRequest, ProjectDetailResponse, ProjectEntry, ProjectExplorer, ResolveRefRequest,
-    ResolveRefResponse,
+    ApiResponse, AttachFolderRequest, CreateProjectRequest, ProjectDetailResponse, ProjectEntry, ProjectExplorer,
+    ProjectPrdResponse, ProjectRequirementAnalysisResponse, ProjectSummaryResponse, RenameProjectRequest,
+    ResolveRefRequest, ResolveRefResponse, SaveProjectPrdRequest, SaveProjectRequirementAnalysisRequest,
 };
 use aionui_auth::CurrentUser;
 use aionui_common::ApiError;
 use axum::extract::rejection::JsonRejection;
 use axum::extract::{Json, Path, State};
 use axum::http::StatusCode;
-use axum::routing::{delete, get, post};
+use axum::routing::{delete, get, patch, post};
 use axum::{Extension, Router};
 use serde_json::json;
 
@@ -46,11 +47,137 @@ pub struct ProjectRouterState {
 /// All routes require authentication (applied by the caller).
 pub fn project_routes(state: ProjectRouterState) -> Router {
     Router::new()
+        .route("/api/projects", get(list_projects).post(create_project))
         .route("/api/projects/{project_id}", get(get_project))
+        .route("/api/projects/{project_id}/name", patch(rename_project))
+        .route("/api/projects/{project_id}/open", post(open_project))
+        .route(
+            "/api/projects/{project_id}/requirement-analysis",
+            get(get_requirement_analysis).put(save_requirement_analysis),
+        )
+        .route(
+            "/api/projects/{project_id}/requirement-analysis/confirm",
+            post(confirm_requirement_analysis),
+        )
+        .route(
+            "/api/projects/{project_id}/prd",
+            get(get_project_prd).put(save_project_prd),
+        )
         .route("/api/projects/{project_id}/folders", post(attach_folder))
         .route("/api/projects/{project_id}/folders/{pe_id}", delete(remove_folder))
         .route("/api/projects/{project_id}/resolve-ref", post(resolve_ref))
         .with_state(state)
+}
+
+async fn get_requirement_analysis(
+    State(state): State<ProjectRouterState>,
+    Extension(user): Extension<CurrentUser>,
+    Path(project_id): Path<String>,
+) -> Result<Json<ApiResponse<Option<ProjectRequirementAnalysisResponse>>>, ApiError> {
+    let row = state.project.get_requirement_analysis(&user.id, &project_id).await?;
+    Ok(Json(ApiResponse::ok(row.map(to_analysis_response))))
+}
+
+async fn save_requirement_analysis(
+    State(state): State<ProjectRouterState>,
+    Extension(user): Extension<CurrentUser>,
+    Path(project_id): Path<String>,
+    body: Result<Json<SaveProjectRequirementAnalysisRequest>, JsonRejection>,
+) -> Result<Json<ApiResponse<ProjectRequirementAnalysisResponse>>, ApiError> {
+    let Json(req) = body.map_err(ApiError::from)?;
+    let row = state
+        .project
+        .save_requirement_analysis(&user.id, &project_id, req.source_text, req.content)
+        .await?;
+    Ok(Json(ApiResponse::ok(to_analysis_response(row))))
+}
+
+async fn confirm_requirement_analysis(
+    State(state): State<ProjectRouterState>,
+    Extension(user): Extension<CurrentUser>,
+    Path(project_id): Path<String>,
+) -> Result<Json<ApiResponse<ProjectRequirementAnalysisResponse>>, ApiError> {
+    let row = state
+        .project
+        .confirm_requirement_analysis(&user.id, &project_id)
+        .await?;
+    Ok(Json(ApiResponse::ok(to_analysis_response(row))))
+}
+
+async fn get_project_prd(
+    State(state): State<ProjectRouterState>,
+    Extension(user): Extension<CurrentUser>,
+    Path(project_id): Path<String>,
+) -> Result<Json<ApiResponse<Option<ProjectPrdResponse>>>, ApiError> {
+    let row = state.project.get_project_prd(&user.id, &project_id).await?;
+    Ok(Json(ApiResponse::ok(row.map(to_prd_response))))
+}
+
+async fn save_project_prd(
+    State(state): State<ProjectRouterState>,
+    Extension(user): Extension<CurrentUser>,
+    Path(project_id): Path<String>,
+    body: Result<Json<SaveProjectPrdRequest>, JsonRejection>,
+) -> Result<Json<ApiResponse<ProjectPrdResponse>>, ApiError> {
+    let Json(req) = body.map_err(ApiError::from)?;
+    let row = state
+        .project
+        .save_project_prd(&user.id, &project_id, req.title, req.content)
+        .await?;
+    Ok(Json(ApiResponse::ok(to_prd_response(row))))
+}
+
+async fn list_projects(
+    State(state): State<ProjectRouterState>,
+    Extension(user): Extension<CurrentUser>,
+) -> Result<Json<ApiResponse<Vec<ProjectSummaryResponse>>>, ApiError> {
+    let projects = state
+        .project
+        .list_projects(&user.id)
+        .await?
+        .into_iter()
+        .map(|project| ProjectSummaryResponse {
+            project_id: project.id,
+            name: project.name,
+            workspace_path: project.workspace_path,
+            created_at: project.created_at,
+            updated_at: project.updated_at,
+        })
+        .collect();
+    Ok(Json(ApiResponse::ok(projects)))
+}
+
+async fn create_project(
+    State(state): State<ProjectRouterState>,
+    Extension(user): Extension<CurrentUser>,
+    body: Result<Json<CreateProjectRequest>, JsonRejection>,
+) -> Result<(StatusCode, Json<ApiResponse<ProjectDetailResponse>>), ApiError> {
+    let Json(req) = body.map_err(ApiError::from)?;
+    let detail = state
+        .project
+        .create_standard_named(&user.id, req.name, req.workspace_uri)
+        .await?;
+    Ok((StatusCode::CREATED, Json(ApiResponse::ok(to_detail_response(detail)))))
+}
+
+async fn rename_project(
+    State(state): State<ProjectRouterState>,
+    Extension(user): Extension<CurrentUser>,
+    Path(project_id): Path<String>,
+    body: Result<Json<RenameProjectRequest>, JsonRejection>,
+) -> Result<Json<ApiResponse<ProjectDetailResponse>>, ApiError> {
+    let Json(req) = body.map_err(ApiError::from)?;
+    let detail = state.project.rename_project(&user.id, &project_id, req.name).await?;
+    Ok(Json(ApiResponse::ok(to_detail_response(detail))))
+}
+
+async fn open_project(
+    State(state): State<ProjectRouterState>,
+    Extension(user): Extension<CurrentUser>,
+    Path(project_id): Path<String>,
+) -> Result<Json<ApiResponse<ProjectDetailResponse>>, ApiError> {
+    let detail = state.project.open_project(&user.id, &project_id).await?;
+    Ok(Json(ApiResponse::ok(to_detail_response(detail))))
 }
 
 /// `GET /api/projects/{project_id}` — full project detail + all roots in one
@@ -173,11 +300,33 @@ fn to_entry(entry: ProjectExplorerEntry) -> ProjectEntry {
     }
 }
 
+fn to_analysis_response(row: aionui_db::ProjectRequirementAnalysisRow) -> ProjectRequirementAnalysisResponse {
+    ProjectRequirementAnalysisResponse {
+        project_id: row.project_id,
+        source_text: row.source_text,
+        content: row.content,
+        status: row.status,
+        confirmed_by: row.confirmed_by,
+        confirmed_at: row.confirmed_at,
+        updated_at: row.updated_at,
+    }
+}
+
+fn to_prd_response(row: aionui_db::ProjectPrdRow) -> ProjectPrdResponse {
+    ProjectPrdResponse {
+        project_id: row.project_id,
+        title: row.title,
+        content: row.content,
+        updated_at: row.updated_at,
+    }
+}
+
 // ── error mapping: ProjectError → ApiError (stable domain codes) ─────────────
 
 impl From<ProjectError> for ApiError {
     fn from(err: ProjectError) -> Self {
         let (status, code, details) = match &err {
+            ProjectError::InvalidProjectName => (StatusCode::BAD_REQUEST, "invalid_project_name", None),
             ProjectError::ProjectNotFound { project_id } => (
                 StatusCode::NOT_FOUND,
                 "project_not_found",
@@ -202,6 +351,16 @@ impl From<ProjectError> for ApiError {
                 StatusCode::CONFLICT,
                 "workspace_entry_immutable",
                 Some(json!({ "pe_id": pe_id })),
+            ),
+            ProjectError::RequirementAnalysisEmpty => (StatusCode::CONFLICT, "requirement_analysis_empty", None),
+            ProjectError::RequirementAnalysisNotConfirmed => {
+                (StatusCode::CONFLICT, "requirement_analysis_not_confirmed", None)
+            }
+            ProjectError::InvalidPrd => (StatusCode::BAD_REQUEST, "invalid_prd", None),
+            ProjectError::ArtifactWriteFailed { path } => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "artifact_write_failed",
+                Some(json!({ "path": path })),
             ),
             ProjectError::StandardProjectConflict { folder_id } => (
                 StatusCode::CONFLICT,

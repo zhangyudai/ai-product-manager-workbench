@@ -96,7 +96,17 @@ import type {
 } from '../update/updateTypes';
 import type { AgentMetadata } from '@/renderer/utils/model/agentTypes';
 import type { Theme } from '@/common/theme/types';
-import type { AttachFolderRequest, ProjectDetailDto, ProjectEntryDto } from '@/common/types/project';
+import type {
+  AttachFolderRequest,
+  CreateProjectRequest,
+  ProjectDetailDto,
+  ProjectEntryDto,
+  ProjectPrdDto,
+  ProjectRequirementAnalysisDto,
+  ProjectSummaryDto,
+  SaveProjectPrdRequest,
+  SaveProjectRequirementAnalysisRequest,
+} from '@/common/types/project';
 import type { ChatFileRef, ContentEncoding } from '@/common/types/chatFile';
 import type { ProtocolDetectionRequest, ProtocolDetectionResponse } from '../utils/protocolDetector';
 import {
@@ -540,8 +550,39 @@ export const runtime = {
 // ---------------------------------------------------------------------------
 
 export const project = {
+  list: httpGet<ProjectSummaryDto[], void>('/api/projects'),
+  create: httpPost<ProjectDetailDto, CreateProjectRequest>('/api/projects', (p) => p),
   /** GET /api/projects/{id} → full project detail incl. all pe roots (entries). */
   get: httpGet<ProjectDetailDto, { project_id: string }>((p) => `/api/projects/${encodeURIComponent(p.project_id)}`),
+  rename: httpPatch<ProjectDetailDto, { project_id: string; name: string }>(
+    (p) => `/api/projects/${encodeURIComponent(p.project_id)}/name`,
+    (p) => ({ name: p.name })
+  ),
+  open: httpPost<ProjectDetailDto, { project_id: string }>(
+    (p) => `/api/projects/${encodeURIComponent(p.project_id)}/open`,
+    () => undefined
+  ),
+  getRequirementAnalysis: httpGet<ProjectRequirementAnalysisDto | null, { project_id: string }>(
+    (p) => `/api/projects/${encodeURIComponent(p.project_id)}/requirement-analysis`
+  ),
+  saveRequirementAnalysis: httpPut<
+    ProjectRequirementAnalysisDto,
+    { project_id: string } & SaveProjectRequirementAnalysisRequest
+  >(
+    (p) => `/api/projects/${encodeURIComponent(p.project_id)}/requirement-analysis`,
+    (p) => ({ source_text: p.source_text, content: p.content })
+  ),
+  confirmRequirementAnalysis: httpPost<ProjectRequirementAnalysisDto, { project_id: string }>(
+    (p) => `/api/projects/${encodeURIComponent(p.project_id)}/requirement-analysis/confirm`,
+    () => undefined
+  ),
+  getPrd: httpGet<ProjectPrdDto | null, { project_id: string }>(
+    (p) => `/api/projects/${encodeURIComponent(p.project_id)}/prd`
+  ),
+  savePrd: httpPut<ProjectPrdDto, { project_id: string } & SaveProjectPrdRequest>(
+    (p) => `/api/projects/${encodeURIComponent(p.project_id)}/prd`,
+    (p) => ({ title: p.title, content: p.content })
+  ),
   /**
    * POST /api/projects/{id}/folders → attach a folder, returns the single new (or,
    * for a subdir, the existing focused) entry. 409 `project_explorer_duplicate` /

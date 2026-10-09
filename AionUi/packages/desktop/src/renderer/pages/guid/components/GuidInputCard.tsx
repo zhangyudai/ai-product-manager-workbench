@@ -12,7 +12,6 @@ import { Input } from '@arco-design/web-react';
 import type { RefTextAreaType } from '@arco-design/web-react/es/Input';
 import React, { useEffect, useRef } from 'react';
 import styles from '../index.module.css';
-import GuidWorkspaceFootnote from './GuidWorkspaceFootnote';
 
 type GuidInputCardProps = {
   focusRequestKey?: string;
@@ -40,11 +39,6 @@ type GuidInputCardProps = {
   // Action row
   actionRow: React.ReactNode;
   slashCommandMenu?: React.ReactNode;
-
-  // Workspace
-  workspaceDir: string;
-  onSelectWorkspace: (dir: string) => void;
-  onClearWorkspace: () => void;
 };
 
 const GuidInputCard: React.FC<GuidInputCardProps> = ({
@@ -66,9 +60,6 @@ const GuidInputCard: React.FC<GuidInputCardProps> = ({
   onRemoveFile,
   actionRow,
   slashCommandMenu,
-  workspaceDir,
-  onSelectWorkspace,
-  onClearWorkspace,
 }) => {
   const layout = useLayoutContext();
   const isMobile = layout?.isMobile ?? false;
@@ -150,11 +141,6 @@ const GuidInputCard: React.FC<GuidInputCardProps> = ({
         {actionRow}
         {slashCommandMenu && <div className='absolute start-0 end-0 top-[calc(100%+4px)] z-70'>{slashCommandMenu}</div>}
       </div>
-      <GuidWorkspaceFootnote
-        workspaceDir={workspaceDir}
-        onSelectWorkspace={onSelectWorkspace}
-        onClearWorkspace={onClearWorkspace}
-      />
     </div>
   );
 };

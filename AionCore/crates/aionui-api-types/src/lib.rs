@@ -145,7 +145,9 @@ pub use office::{
     PreviewUrlResponse, RefreshPreviewRequest, RefreshPreviewResponse, StartPreviewRequest, StopPreviewRequest,
 };
 pub use project::{
-    AttachFolderRequest, ProjectDetailResponse, ProjectEntry, ProjectExplorer, ResolveRefRequest, ResolveRefResponse,
+    AttachFolderRequest, CreateProjectRequest, ProjectDetailResponse, ProjectEntry, ProjectExplorer,
+    ProjectPrdResponse, ProjectRequirementAnalysisResponse, ProjectSummaryResponse, RenameProjectRequest,
+    ResolveRefRequest, ResolveRefResponse, SaveProjectPrdRequest, SaveProjectRequirementAnalysisRequest,
 };
 pub use provider::{
     BedrockAuthMethod, BedrockConfig, CreateProviderRequest, DetectProtocolRequest, DetectionSuggestion,

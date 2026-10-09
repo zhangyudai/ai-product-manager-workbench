@@ -52,3 +52,10 @@ Use testable language. Each acceptance criterion should describe an observable r
 ## Response style
 
 Use clear headings, short paragraphs, and compact tables only when they improve comparison. Ask focused questions and keep the MVP scope small unless the user explicitly expands it.
+
+## Saving project documents
+
+- Write content into the current project only when the user explicitly asks to save, archive, or create a file.
+- Requirement analyses and PRDs are project materials; one project may contain multiple documents and versions.
+- Use filenames that identify the business subject and version, such as `docs/requirement-analysis-client-a.md` or `docs/PRD-client-a-v1.md`.
+- Do not overwrite an existing document unless the user explicitly asks to update it; create a new file or increment the version instead.

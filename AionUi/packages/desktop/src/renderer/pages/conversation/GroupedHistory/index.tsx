@@ -5,6 +5,8 @@
  */
 
 import type { TChatConversation } from '@/common/config/storage';
+import { ipcBridge } from '@/common';
+import type { ProjectSummaryDto } from '@/common/types/project';
 import AionModal from '@/renderer/components/base/AionModal';
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { useCronJobsMap } from '@/renderer/pages/cron';
@@ -17,6 +19,7 @@ import classNames from 'classnames';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
+import useSWR from 'swr';
 
 import WorkspaceCollapse from '../components/WorkspaceCollapse';
 import ConversationRow from './ConversationRow';
@@ -41,6 +44,9 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
   const layout = useLayoutContext();
   const isMobile = layout?.isMobile ?? false;
   const { getJobStatus, markAsRead, setActiveConversation } = useCronJobsMap();
+  const { data: formalProjects = [] } = useSWR<ProjectSummaryDto[]>('product-projects', () =>
+    ipcBridge.project.list.invoke()
+  );
 
   const {
     conversations,
@@ -221,13 +227,15 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
   // Codex-style split: project folders (workspaces) on top, free conversations below.
   // Projects section: collect all workspace groups across timeline sections, ordered by recency.
   const projectGroups = useMemo(() => {
-    const seen = new Set<string>();
-    const groups: Array<{ workspace: string; displayName: string; conversations: TChatConversation[] }> = [];
+    const normalizedPath = (value: string) => value.replaceAll('\\', '/').replace(/\/$/, '').toLocaleLowerCase();
+    const workspaceGroups = new Map<
+      string,
+      { workspace: string; displayName: string; conversations: TChatConversation[] }
+    >();
     for (const section of timelineSections) {
       for (const item of section.items) {
-        if (item.type === 'workspace' && item.workspaceGroup && !seen.has(item.workspaceGroup.workspace)) {
-          seen.add(item.workspaceGroup.workspace);
-          groups.push({
+        if (item.type === 'workspace' && item.workspaceGroup) {
+          workspaceGroups.set(normalizedPath(item.workspaceGroup.workspace), {
             workspace: item.workspaceGroup.workspace,
             displayName: item.workspaceGroup.display_name,
             conversations: item.workspaceGroup.conversations,
@@ -235,8 +243,31 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
         }
       }
     }
+    const groups = formalProjects.map((project) => {
+      const legacy = workspaceGroups.get(normalizedPath(project.workspace_path));
+      workspaceGroups.delete(normalizedPath(project.workspace_path));
+      const boundConversations = conversations.filter((conversation) => conversation.project_id === project.project_id);
+      const merged = new Map<string, TChatConversation>();
+      for (const conversation of [...boundConversations, ...(legacy?.conversations ?? [])]) {
+        merged.set(conversation.id, conversation);
+      }
+      return {
+        projectId: project.project_id,
+        workspace: project.workspace_path,
+        displayName: project.name,
+        conversations: [...merged.values()],
+      };
+    });
+    for (const legacy of workspaceGroups.values()) {
+      groups.push({ projectId: undefined, ...legacy });
+    }
     return groups;
-  }, [timelineSections]);
+  }, [conversations, formalProjects, timelineSections]);
+
+  const projectConversationIds = useMemo(
+    () => new Set(projectGroups.flatMap((group) => group.conversations.map((conversation) => conversation.id))),
+    [projectGroups]
+  );
 
   // Conversations section: keep timeline grouping (today/yesterday/...) but only show non-workspace conversations.
   const conversationOnlySections = useMemo(
@@ -244,10 +275,13 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
       timelineSections
         .map((section) => ({
           ...section,
-          items: section.items.filter((item) => item.type === 'conversation' && item.conversation),
+          items: section.items.filter(
+            (item) =>
+              item.type === 'conversation' && item.conversation && !projectConversationIds.has(item.conversation.id)
+          ),
         }))
         .filter((section) => section.items.length > 0),
-    [timelineSections]
+    [projectConversationIds, timelineSections]
   );
 
   if (timelineSections.length === 0 && pinnedConversations.length === 0) {
@@ -444,9 +478,18 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
                       stickyHeader
                       stickyTop={28}
                       header={
-                        <span className='text-14px font-[500] truncate flex-1 text-t-primary min-w-0'>
+                        <button
+                          type='button'
+                          className='min-w-0 flex-1 cursor-pointer truncate border-0 bg-transparent p-0 text-left text-14px font-[500] text-t-primary'
+                          title={group.projectId ? `打开项目：${group.displayName}` : group.displayName}
+                          onClick={(event) => {
+                            if (!group.projectId) return;
+                            event.stopPropagation();
+                            void navigate(`/projects/${group.projectId}`);
+                          }}
+                        >
                           {group.displayName}
-                        </span>
+                        </button>
                       }
                       trailing={
                         <span className='flex items-center gap-6px'>
@@ -461,13 +504,17 @@ const WorkspaceGroupedHistory: React.FC<WorkspaceGroupedHistoryProps> = ({
                               )}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                void navigate('/guid', { state: { workspace: group.workspace } });
+                                void navigate('/guid', {
+                                  state: { workspace: group.workspace, projectId: group.projectId },
+                                });
                               }}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' || e.key === ' ') {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  void navigate('/guid', { state: { workspace: group.workspace } });
+                                  void navigate('/guid', {
+                                    state: { workspace: group.workspace, projectId: group.projectId },
+                                  });
                                 }
                               }}
                             >
