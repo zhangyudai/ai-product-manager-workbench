@@ -381,31 +381,30 @@
             <button class="icon-button" type="button" aria-label="更多设置"><i data-lucide="sliders-horizontal" aria-hidden="true"></i></button>
           </div>
           <div class="workspace-tabs" role="tablist" aria-label="项目工作区">
-            <button class="workspace-tab" type="button" role="tab" data-workspace="overview" aria-selected="false">概览</button>
-            <button class="workspace-tab" type="button" role="tab" data-workspace="materials" aria-selected="false">资料 <span class="nav-count">3</span></button>
-            <button class="workspace-tab" type="button" role="tab" data-workspace="analysis" aria-selected="true">需求分析</button>
-            <button class="workspace-tab" type="button" role="tab" data-workspace="prd" aria-selected="false">PRD</button>
+            <button class="workspace-tab" type="button" role="tab" data-workspace="overview" aria-selected="true">项目概览</button>
+            <button class="workspace-tab" type="button" role="tab" data-workspace="materials" aria-selected="false">项目资料 <span class="nav-count">5</span></button>
           </div>
           <div class="workspace-body">
-            <section class="workspace-panel" data-workspace-panel="overview">
-              <div class="section-head"><div><h2>项目概览</h2><p>查看资料、分析和 PRD 的最新状态。</p></div></div>
+            <section class="workspace-panel active" data-workspace-panel="overview">
+              <div class="section-head"><div><h2>项目是对话和文档的共同容器</h2><p>在项目对话中梳理需求、讨论方案，并把确认后的结果保存成项目文件。</p></div><div class="actions"><button class="button primary" type="button" data-route="chat" data-conversation-context="AI 产品工作台"><i data-lucide="message-square-plus" aria-hidden="true"></i>新建项目对话</button></div></div>
               <div class="list">
-                <div class="list-row"><strong>项目资料</strong><span>3 份可用</span><small>刚刚更新</small><button class="button" type="button" data-open-workspace="materials">查看资料</button></div>
-                <div class="list-row"><strong>需求分析</strong><span>待确认</span><small>5 分钟前</small><button class="button" type="button" data-open-workspace="analysis">继续分析</button></div>
-                <div class="list-row"><strong>PRD</strong><span>尚未生成</span><small>等待需求确认</small><button class="button" type="button" data-open-workspace="prd">查看 PRD</button></div>
+                <div class="list-row"><strong>项目对话</strong><span>在真实聊天窗口持续讨论</span><small>对话自动归属当前项目</small><button class="button" type="button" data-route="chat" data-conversation-context="AI 产品工作台">开始对话</button></div>
+                <div class="list-row"><strong>项目资料</strong><span>5 份可用</span><small>支持多份需求分析与 PRD</small><button class="button" type="button" data-open-workspace="materials">查看资料</button></div>
               </div>
             </section>
 
             <section class="workspace-panel" data-workspace-panel="materials">
-              <div class="section-head"><div><h2>项目资料</h2><p>这些资料会在生成需求分析前由你确认是否使用。</p></div><div class="actions"><button class="button primary" type="button"><i data-lucide="plus" aria-hidden="true"></i>添加资料</button></div></div>
+              <div class="section-head"><div><h2>项目资料</h2><p>需求分析和 PRD 都是普通项目文件，可以保存多份和多个版本，不再占用独立页签。</p></div><div class="actions"><button class="button primary" type="button"><i data-lucide="plus" aria-hidden="true"></i>添加资料</button></div></div>
               <div class="list">
-                <div class="list-row"><strong>PRD.md</strong><span>Markdown · 18 KB</span><span class="task-state"><span class="status-dot"></span>可使用</span><button class="button" type="button">预览</button></div>
+                <div class="list-row"><strong>PRD-工作台-v1.md</strong><span>Markdown · 18 KB</span><span class="task-state"><span class="status-dot"></span>可使用</span><button class="button" type="button">预览</button></div>
+                <div class="list-row"><strong>PRD-工作台-v2.md</strong><span>Markdown · 22 KB</span><span class="task-state"><span class="status-dot"></span>可使用</span><button class="button" type="button">预览</button></div>
+                <div class="list-row"><strong>需求分析-访谈版.md</strong><span>Markdown · 9 KB</span><span class="task-state"><span class="status-dot"></span>可使用</span><button class="button" type="button">预览</button></div>
                 <div class="list-row"><strong>用户访谈纪要.docx</strong><span>Word · 146 KB</span><span class="task-state"><span class="status-dot"></span>可使用</span><button class="button" type="button">预览</button></div>
                 <div class="list-row"><strong>竞品分析.pdf</strong><span>PDF · 2.3 MB</span><span class="task-state"><span class="status-dot"></span>可使用</span><button class="button" type="button">预览</button></div>
               </div>
             </section>
 
-            <section class="workspace-panel active" data-workspace-panel="analysis">
+            <section class="workspace-panel" data-workspace-panel="analysis" hidden>
               <div class="section-head">
                 <div><h2>需求分析</h2><p>AI 先生成草稿，你编辑并确认后才能进入正式 PRD。</p></div>
                 <div class="actions"><span class="status-chip" id="analysis-status">尚未开始</span></div>
@@ -440,7 +439,7 @@
               </div>
             </section>
 
-            <section class="workspace-panel" data-workspace-panel="prd">
+            <section class="workspace-panel" data-workspace-panel="prd" hidden>
               <div class="section-head"><div><h2>PRD 工作区</h2><p>基于已确认需求生成，并持续自动保存。</p></div><div class="actions"><span class="save-indicator" id="save-status"><i data-lucide="check" aria-hidden="true"></i>已保存</span><button class="button" type="button"><i data-lucide="download" aria-hidden="true"></i>导出 Markdown</button></div></div>
               <div class="prd-layout">
                 <nav class="toc" aria-label="PRD 章节"><button type="button" aria-current="true">产品背景</button><button type="button">产品目标</button><button type="button">目标用户</button><button type="button">核心场景</button><button type="button">功能范围</button><button type="button">业务流程</button><button type="button">功能需求</button><button type="button">非功能要求</button><button type="button">验收标准</button></nav>
@@ -584,8 +583,8 @@
 
       document.querySelectorAll('[data-start]').forEach(button => {
         button.addEventListener('click', () => {
-          showWorkspace('analysis');
-          document.getElementById('analysis-input').value = `从“${button.dataset.start}”开始，请先梳理目标用户、核心场景、痛点、需求和 MVP 范围。`;
+          openConversation('', 'AI 产品工作台');
+          document.getElementById('chat-prompt').value = `从“${button.dataset.start}”开始，请先梳理目标用户、核心场景、痛点、需求和 MVP 范围。`;
         });
       });
 
@@ -596,8 +595,8 @@
           showToast('请先描述产品想法或业务需求');
           return;
         }
-        showWorkspace('analysis');
-        document.getElementById('analysis-input').value = prompt.value.trim();
+        openConversation('', 'AI 产品工作台');
+        document.getElementById('chat-prompt').value = prompt.value.trim();
       });
 
       function setAnalysisState(name) {

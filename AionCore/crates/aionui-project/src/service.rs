@@ -2,7 +2,9 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
 use aionui_common::generate_short_id;
-use aionui_db::{FolderRow, IProjectStore, ProjectExplorerRow, ProjectKind, Role};
+use aionui_db::{
+    FolderRow, IProjectStore, ProjectExplorerRow, ProjectKind, ProjectPrdRow, ProjectRequirementAnalysisRow, Role,
+};
 use chrono::{Datelike, Local};
 use tokio::sync::mpsc::UnboundedSender;
 
@@ -10,8 +12,8 @@ use crate::canonical::{self, Canonical};
 use crate::containment;
 use crate::scm::ScmInbound;
 use crate::types::{
-    AttachInput, FolderDto, ProjectDetail, ProjectError, ProjectExplorerEntry, ProjectExplorerView, ReferenceInput,
-    ResolveOutput, ResolvedResource, RuntimeStatus,
+    AttachInput, FolderDto, ProjectDetail, ProjectError, ProjectExplorerEntry, ProjectExplorerView, ProjectSummary,
+    ReferenceInput, ResolveOutput, ResolvedResource, RuntimeStatus,
 };
 
 /// Orchestrates the three project-bind tables through an injected
@@ -69,6 +71,149 @@ impl ProjectService {
         self.ensure_accessible(&canonical)?;
         self.resolve_core(user_id, canonical, uri, ProjectKind::Standard, None)
             .await
+    }
+
+    pub async fn get_requirement_analysis(
+        &self,
+        user_id: &str,
+        project_id: &str,
+    ) -> Result<Option<ProjectRequirementAnalysisRow>, ProjectError> {
+        self.ensure_project_owner(user_id, project_id).await?;
+        Ok(self.store.get_requirement_analysis(user_id, project_id).await?)
+    }
+
+    pub async fn save_requirement_analysis(
+        &self,
+        user_id: &str,
+        project_id: &str,
+        source_text: String,
+        content: String,
+    ) -> Result<ProjectRequirementAnalysisRow, ProjectError> {
+        self.ensure_project_owner(user_id, project_id).await?;
+        self.write_project_artifact(user_id, project_id, "需求分析.md", content.trim())
+            .await?;
+        Ok(self
+            .store
+            .save_requirement_analysis(user_id, project_id, source_text.trim(), content.trim())
+            .await?)
+    }
+
+    pub async fn confirm_requirement_analysis(
+        &self,
+        user_id: &str,
+        project_id: &str,
+    ) -> Result<ProjectRequirementAnalysisRow, ProjectError> {
+        self.ensure_project_owner(user_id, project_id).await?;
+        let current = self
+            .store
+            .get_requirement_analysis(user_id, project_id)
+            .await?
+            .ok_or(ProjectError::RequirementAnalysisEmpty)?;
+        if current.content.trim().is_empty() {
+            return Err(ProjectError::RequirementAnalysisEmpty);
+        }
+        self.store
+            .confirm_requirement_analysis(user_id, project_id)
+            .await?
+            .ok_or(ProjectError::RequirementAnalysisEmpty)
+    }
+
+    pub async fn get_project_prd(
+        &self,
+        user_id: &str,
+        project_id: &str,
+    ) -> Result<Option<ProjectPrdRow>, ProjectError> {
+        self.ensure_project_owner(user_id, project_id).await?;
+        Ok(self.store.get_project_prd(user_id, project_id).await?)
+    }
+
+    pub async fn save_project_prd(
+        &self,
+        user_id: &str,
+        project_id: &str,
+        title: String,
+        content: String,
+    ) -> Result<ProjectPrdRow, ProjectError> {
+        self.ensure_project_owner(user_id, project_id).await?;
+        let analysis = self.store.get_requirement_analysis(user_id, project_id).await?;
+        if analysis.as_ref().map(|row| row.status.as_str()) != Some("confirmed") {
+            return Err(ProjectError::RequirementAnalysisNotConfirmed);
+        }
+        let title = title.trim();
+        let content = content.trim();
+        if title.is_empty() || title.chars().count() > 120 || content.is_empty() {
+            return Err(ProjectError::InvalidPrd);
+        }
+        let document = format!("{content}\n");
+        self.write_project_artifact(user_id, project_id, "PRD.md", &document)
+            .await?;
+        Ok(self.store.save_project_prd(user_id, project_id, title, content).await?)
+    }
+
+    /// Persist the human-readable copy beside the user's project files. SQLite
+    /// remains the structured workflow/status source; `docs/*.md` is the
+    /// portable project artifact the user can inspect with any editor.
+    async fn write_project_artifact(
+        &self,
+        user_id: &str,
+        project_id: &str,
+        file_name: &str,
+        content: &str,
+    ) -> Result<(), ProjectError> {
+        let entries = self.store.list_entries(user_id, project_id).await?;
+        let (_, folder) = entries
+            .into_iter()
+            .find(|(entry, _)| entry.role == Role::Workspace.as_str())
+            .ok_or(ProjectError::WorkspaceMissing)?;
+        let root = canonical::uri_to_path(&folder.resource_uri)?;
+        let docs = root.join("docs");
+        std::fs::create_dir_all(&docs).map_err(|_| ProjectError::ArtifactWriteFailed {
+            path: docs.to_string_lossy().into_owned(),
+        })?;
+        let target = docs.join(file_name);
+        let temporary = docs.join(format!(".{file_name}.tmp"));
+        std::fs::write(&temporary, content).map_err(|_| ProjectError::ArtifactWriteFailed {
+            path: target.to_string_lossy().into_owned(),
+        })?;
+        if target.exists() {
+            std::fs::remove_file(&target).map_err(|_| ProjectError::ArtifactWriteFailed {
+                path: target.to_string_lossy().into_owned(),
+            })?;
+        }
+        std::fs::rename(&temporary, &target).map_err(|_| ProjectError::ArtifactWriteFailed {
+            path: target.to_string_lossy().into_owned(),
+        })?;
+        Ok(())
+    }
+
+    async fn ensure_project_owner(&self, user_id: &str, project_id: &str) -> Result<(), ProjectError> {
+        self.store
+            .get_project(user_id, project_id)
+            .await?
+            .map(|_| ())
+            .ok_or_else(|| ProjectError::ProjectNotFound {
+                project_id: project_id.to_owned(),
+            })
+    }
+
+    /// Explicit product-project creation. The selected folder remains the
+    /// workspace identity while the user-facing name is independent of it.
+    pub async fn create_standard_named(
+        &self,
+        user_id: &str,
+        name: String,
+        uri: String,
+    ) -> Result<ProjectDetail, ProjectError> {
+        let name = validate_project_name(&name)?;
+        let resolved = self.create_standard(user_id, uri).await?;
+        let project_id = resolved.project.project_id;
+        self.store
+            .rename_project(user_id, &project_id, name)
+            .await?
+            .ok_or_else(|| ProjectError::ProjectNotFound {
+                project_id: project_id.clone(),
+            })?;
+        self.get_project(user_id, &project_id).await
     }
 
     /// Create a temp session directory (path owned here) → `kind = temp`.
@@ -273,6 +418,48 @@ impl ProjectService {
     }
 
     // ── reads ──────────────────────────────────────────────────────────
+
+    pub async fn list_projects(&self, user_id: &str) -> Result<Vec<ProjectSummary>, ProjectError> {
+        let rows = self.store.list_standard_projects(user_id).await?;
+        Ok(rows
+            .into_iter()
+            .map(|(project, folder)| ProjectSummary {
+                id: project.project_id,
+                name: project.name,
+                workspace_path: canonical::uri_to_path(&folder.resource_uri)
+                    .map(|path| path.to_string_lossy().into_owned())
+                    .unwrap_or(folder.resource_uri),
+                created_at: project.created_at,
+                updated_at: project.updated_at,
+            })
+            .collect())
+    }
+
+    pub async fn rename_project(
+        &self,
+        user_id: &str,
+        project_id: &str,
+        name: String,
+    ) -> Result<ProjectDetail, ProjectError> {
+        let name = validate_project_name(&name)?;
+        self.store
+            .rename_project(user_id, project_id, name)
+            .await?
+            .ok_or_else(|| ProjectError::ProjectNotFound {
+                project_id: project_id.to_owned(),
+            })?;
+        self.get_project(user_id, project_id).await
+    }
+
+    pub async fn open_project(&self, user_id: &str, project_id: &str) -> Result<ProjectDetail, ProjectError> {
+        self.store
+            .touch_project(user_id, project_id)
+            .await?
+            .ok_or_else(|| ProjectError::ProjectNotFound {
+                project_id: project_id.to_owned(),
+            })?;
+        self.get_project(user_id, project_id).await
+    }
 
     pub async fn get_project(&self, user_id: &str, project_id: &str) -> Result<ProjectDetail, ProjectError> {
         let project =
@@ -482,6 +669,14 @@ fn leaf_of(dir: &Path) -> String {
     dir.file_name()
         .map(|s| s.to_string_lossy().into_owned())
         .unwrap_or_default()
+}
+
+fn validate_project_name(name: &str) -> Result<&str, ProjectError> {
+    let trimmed = name.trim();
+    if trimmed.is_empty() || trimmed.chars().count() > 80 {
+        return Err(ProjectError::InvalidProjectName);
+    }
+    Ok(trimmed)
 }
 
 /// Compute a folder's runtime availability by stat (never persisted).

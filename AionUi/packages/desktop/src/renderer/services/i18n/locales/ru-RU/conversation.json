@@ -1,4 +1,20 @@
 {
+  "workbench": {
+    "navLabel": "Workbench",
+    "brandHomeLabel": "Return to the workbench home",
+    "eyebrow": "Where should today's product work begin?",
+    "title": "Turn scattered ideas into a product plan you can confirm and execute.",
+    "description": "Choose a starting point. AI first organizes the requirements and lists open questions; a formal PRD is generated only after you confirm.",
+    "ideaTitle": "Start with an idea",
+    "ideaDescription": "Clarify target users, scenarios, and MVP scope",
+    "ideaPrompt": "I have a product idea. Help me clarify its target users, usage scenarios, and MVP scope.",
+    "importTitle": "Import existing material",
+    "importDescription": "Extract needs from interviews, notes, or research",
+    "importPrompt": "I have existing material. First organize its requirements, evidence, and open questions.",
+    "businessTitle": "Analyze a business need",
+    "businessDescription": "Find information gaps and define acceptance scope",
+    "businessPrompt": "I have a business need. Help me identify information gaps, clarify scope, and list open questions."
+  },
   "welcome": {
     "title": "Привет! Каковы ваши планы на сегодня?",
     "placeholder": "Отправьте сообщение, загрузите файлы, откройте папку, создайте запланированную задачу или введите / для команд...",

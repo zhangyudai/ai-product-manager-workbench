@@ -89,6 +89,15 @@ pub struct ProjectDetail {
     pub updated_at: TimestampMs,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct ProjectSummary {
+    pub id: String,
+    pub name: String,
+    pub workspace_path: String,
+    pub created_at: TimestampMs,
+    pub updated_at: TimestampMs,
+}
+
 /// Attach an additional (non-workspace) folder to a project.
 #[derive(Debug, Clone)]
 pub struct AttachInput {
@@ -125,6 +134,9 @@ pub struct ResolvedResource {
 /// rather than relying on message parsing.
 #[derive(Debug, thiserror::Error)]
 pub enum ProjectError {
+    #[error("project name must contain 1 to 80 characters")]
+    InvalidProjectName,
+
     #[error("folder not found: {path}")]
     FolderNotFound { path: String },
 
@@ -164,6 +176,18 @@ pub enum ProjectError {
     #[error("workspace entry is immutable: {pe_id}")]
     WorkspaceEntryImmutable { pe_id: String },
 
+    #[error("requirement analysis must contain content before it can be confirmed")]
+    RequirementAnalysisEmpty,
+
+    #[error("confirmed requirement analysis is required before saving a PRD")]
+    RequirementAnalysisNotConfirmed,
+
+    #[error("PRD title and content are required")]
+    InvalidPrd,
+
+    #[error("failed to write project artifact: {path}")]
+    ArtifactWriteFailed { path: String },
+
     #[error("invalid relative path: {relative_path}")]
     InvalidRelativePath { relative_path: String },
 
@@ -190,6 +214,7 @@ impl ProjectError {
     /// Stable, UI-consumable error code.
     pub fn code(&self) -> &'static str {
         match self {
+            ProjectError::InvalidProjectName => "invalid_project_name",
             ProjectError::FolderNotFound { .. } => "folder_not_found",
             ProjectError::FolderNotDirectory { .. } => "folder_not_directory",
             ProjectError::FolderPermissionDenied { .. } => "folder_permission_denied",
@@ -203,6 +228,10 @@ impl ProjectError {
             ProjectError::ProjectExplorerOverlap { .. } => "project_explorer_overlap",
             ProjectError::ProjectExplorerNotFound { .. } => "project_explorer_not_found",
             ProjectError::WorkspaceEntryImmutable { .. } => "workspace_entry_immutable",
+            ProjectError::RequirementAnalysisEmpty => "requirement_analysis_empty",
+            ProjectError::RequirementAnalysisNotConfirmed => "requirement_analysis_not_confirmed",
+            ProjectError::InvalidPrd => "invalid_prd",
+            ProjectError::ArtifactWriteFailed { .. } => "artifact_write_failed",
             ProjectError::InvalidRelativePath { .. } => "invalid_relative_path",
             ProjectError::ResourceOutsideFolder { .. } => "resource_outside_folder",
             ProjectError::UnsupportedResourceScheme { .. } => "unsupported_resource_scheme",

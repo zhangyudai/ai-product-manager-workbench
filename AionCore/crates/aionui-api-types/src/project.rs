@@ -14,6 +14,59 @@ use serde::{Deserialize, Serialize};
 
 use crate::chat_file::ChatFileRef;
 
+/// Compact project row used by the project list and recent-project surfaces.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectSummaryResponse {
+    pub project_id: String,
+    pub name: String,
+    pub workspace_path: String,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct CreateProjectRequest {
+    pub name: String,
+    /// Existing local directory selected as the project's workspace root.
+    pub workspace_uri: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct RenameProjectRequest {
+    pub name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectRequirementAnalysisResponse {
+    pub project_id: String,
+    pub source_text: String,
+    pub content: String,
+    pub status: String,
+    pub confirmed_by: Option<String>,
+    pub confirmed_at: Option<i64>,
+    pub updated_at: i64,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SaveProjectRequirementAnalysisRequest {
+    pub source_text: String,
+    pub content: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectPrdResponse {
+    pub project_id: String,
+    pub title: String,
+    pub content: String,
+    pub updated_at: i64,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SaveProjectPrdRequest {
+    pub title: String,
+    pub content: String,
+}
+
 /// Aggregated project detail — everything the explorer needs in one call,
 /// so the frontend never fans out one request per root.
 #[derive(Debug, Clone, Serialize, Deserialize)]

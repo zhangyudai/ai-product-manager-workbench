@@ -6,6 +6,7 @@
 
 import { ipcBridge } from '@/common';
 import type { IMcpServer, IProvider, TProviderWithModel } from '@/common/config/storage';
+import type { Assistant } from '@/common/types/agent/assistantTypes';
 import AgentModeSelector from '@/renderer/components/agent/AgentModeSelector';
 import { DROPDOWN_SEARCH_THRESHOLD } from '@/renderer/components/agent/runtimeSelectorOptions';
 import AionInlineSearchInput from '@/renderer/components/base/AionInlineSearchInput';
@@ -37,6 +38,8 @@ import {
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import styles from '../index.module.css';
+import GuidAssistantSelector from './GuidAssistantSelector';
+import GuidWorkspaceFootnote from './GuidWorkspaceFootnote';
 
 /**
  * Shared shell for the skills / MCP submenu popups: an optional pinned search
@@ -78,6 +81,15 @@ type GuidActionRowProps = {
   onFilesUploaded: (paths: string[]) => void;
   /** Backend-machine picker (native dialog / server-fs browse): sent as `local` refs. */
   onFilesPicked: (paths: string[]) => void;
+
+  // Conversation context
+  workspaceDir: string;
+  onSelectWorkspace: (dir: string) => void;
+  onClearWorkspace: () => void;
+  assistants: Assistant[];
+  selectedAssistantId: string | null;
+  localeKey: string;
+  onSelectAssistant: (assistantId: string) => void;
 
   // Model selector node (rendered by parent for the desktop layout)
   modelSelectorNode: React.ReactNode;
@@ -121,6 +133,13 @@ const GuidActionRow: React.FC<GuidActionRowProps> = ({
   files,
   onFilesPicked,
   onFilesUploaded,
+  workspaceDir,
+  onSelectWorkspace,
+  onClearWorkspace,
+  assistants,
+  selectedAssistantId,
+  localeKey,
+  onSelectAssistant,
   modelSelectorNode,
   isGeminiMode,
   modelList,
@@ -619,6 +638,19 @@ const GuidActionRow: React.FC<GuidActionRowProps> = ({
               onChange={handleLocalFileChange}
             />
           )}
+        </div>
+        <div className={styles.contextSelectors}>
+          <GuidWorkspaceFootnote
+            workspaceDir={workspaceDir}
+            onSelectWorkspace={onSelectWorkspace}
+            onClearWorkspace={onClearWorkspace}
+          />
+          <GuidAssistantSelector
+            assistants={assistants}
+            selectedAssistantId={selectedAssistantId}
+            localeKey={localeKey}
+            onSelectAssistant={onSelectAssistant}
+          />
         </div>
       </div>
       {isMobile && (

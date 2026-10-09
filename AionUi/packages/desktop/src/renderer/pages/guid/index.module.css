@@ -13,6 +13,102 @@
   margin-bottom: 16px;
 }
 
+.workbenchHero {
+  margin-bottom: 22px;
+}
+
+.workbenchContainer {
+  justify-content: flex-start;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-top: 44px;
+}
+
+.workbenchContainer .guidLayout {
+  width: clamp(var(--app-min-width, 360px), calc(100% - 40px), 960px);
+  margin-top: 0;
+  padding-bottom: 44px;
+}
+
+.workbenchEyebrow {
+  margin: 0 0 8px;
+  color: rgb(var(--primary-6));
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.workbenchTitle {
+  max-width: 720px;
+  margin: 0;
+  color: var(--color-text-1);
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+}
+
+.workbenchDescription {
+  margin: 14px 0 0;
+  color: var(--color-text-2);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.workbenchEntries {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.workbenchEntry {
+  height: auto !important;
+  min-height: 116px;
+  padding: 18px !important;
+  border: 1px solid var(--color-border-2) !important;
+  border-radius: 14px !important;
+  background: var(--bg-base) !important;
+  color: var(--color-text-1) !important;
+  text-align: start;
+}
+
+.workbenchEntry:hover {
+  border-color: rgb(var(--primary-5)) !important;
+  box-shadow: 0 8px 24px rgba(var(--primary-6), 0.08) !important;
+}
+
+.workbenchEntry :global(.arco-btn-content) {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  gap: 12px;
+  white-space: normal;
+}
+
+.workbenchEntryIcon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: rgb(var(--primary-6));
+}
+
+.workbenchEntryCopy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.workbenchEntryCopy strong {
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.workbenchEntryCopy span {
+  color: var(--color-text-3);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .assistantPromptHint {
   color: var(--color-text-3);
   font-size: 13px;
@@ -64,6 +160,40 @@
   align-items: center;
   flex: 0 0 auto;
   margin-inline-end: 0;
+}
+
+.contextSelectors {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.contextSelectorButton {
+  height: 36px !important;
+  max-width: 220px;
+  min-width: 160px;
+  padding: 0 12px !important;
+  border: none !important;
+  border-radius: 8px !important;
+  background: var(--color-fill-2) !important;
+  color: var(--color-text-2) !important;
+}
+
+.contextSelectorButton :global(.arco-btn-content) {
+  display: flex;
+  min-width: 0;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.contextSelectorLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 方案E：模型 + 权限各自独立 tb-btn，中间有竖线分隔 */
@@ -136,9 +266,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding-block: 6px 10px;
-  padding-inline-start: 14px;
-  padding-inline-end: 6px;
+  padding: 0;
   background: transparent;
 }
 
@@ -149,10 +277,13 @@
   font-size: 14px;
   font-weight: 500;
   color: var(--color-text-3);
-  background: transparent;
-  border: none;
-  padding: 4px 6px;
-  border-radius: 6px;
+  height: 36px !important;
+  min-width: 160px;
+  max-width: 220px;
+  background: var(--color-fill-2) !important;
+  border: none !important;
+  padding: 0 12px !important;
+  border-radius: 8px !important;
   cursor: pointer;
   font-family: inherit;
   transition:
@@ -163,7 +294,16 @@
 
 .workspaceEmptyBtn:hover {
   color: var(--color-text-2);
-  background: var(--color-fill-3);
+  background: var(--color-fill-3) !important;
+}
+
+.workspaceEmptyBtn :global(.arco-btn-content) {
+  display: flex;
+  min-width: 0;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 /* 选中态：和空状态同色系，不做颜色跳变 */
@@ -184,23 +324,23 @@
   font-size: 14px;
   font-weight: 500;
   color: var(--color-text-2);
-  background: transparent;
-  border: none;
-  padding-block: 4px;
-  padding-inline-start: 6px;
-  padding-inline-end: 4px;
+  height: 36px !important;
+  background: var(--color-fill-2) !important;
+  border: none !important;
+  padding: 0 12px !important;
   cursor: pointer;
   font-family: inherit;
   transition:
     background 0.12s,
     color 0.12s;
+  min-width: 160px;
   max-width: 220px;
   overflow: hidden;
   white-space: nowrap;
 }
 
 .workspacePillMain:hover {
-  background: var(--color-fill-3);
+  background: var(--color-fill-3) !important;
   color: var(--color-text-1);
 }
 
@@ -360,6 +500,23 @@
 
 /* 移动端优化 */
 @media (max-width: 768px) {
+  .workbenchContainer {
+    padding-top: 24px;
+  }
+
+  .workbenchContainer .guidLayout {
+    width: clamp(var(--app-min-width, 360px), calc(100% - 24px), 100%);
+    padding-bottom: 80px;
+  }
+
+  .workbenchEntries {
+    grid-template-columns: 1fr;
+  }
+
+  .workbenchTitle {
+    font-size: 34px;
+  }
+
   .guidLayout {
     width: clamp(var(--app-min-width, 360px), calc(100% - 24px), 100%);
     padding: 0 12px;
@@ -440,6 +597,19 @@
 /* 整体内容块略往上移，减轻「重心偏下」的感觉 */
 .guidContainer .guidLayout {
   margin-top: -5vh;
+}
+
+/* 工作台内容比新会话更高，必须从顶部开始并允许纵向滚动。 */
+.guidContainer.workbenchContainer {
+  justify-content: flex-start;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-top: 44px;
+}
+
+.guidContainer.workbenchContainer .guidLayout {
+  margin-top: 0;
+  padding-bottom: 44px;
 }
 
 /* Agent 选中时：先放大再回落至略大（pop 动效） */

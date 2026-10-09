@@ -9,7 +9,7 @@
 use std::sync::Arc;
 
 use aionui_common::ApiError;
-use aionui_db::{Database, IProjectStore, SqliteProjectStore, init_database_memory};
+use aionui_db::{Database, IProjectStore, SqliteProjectStore, init_database, init_database_memory};
 use axum::Router;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
@@ -143,6 +143,282 @@ async fn get_project_not_found_returns_domain_code() {
     assert_eq!(status, StatusCode::NOT_FOUND);
     assert_eq!(body["code"], "project_not_found");
     assert_eq!(body["success"], false);
+}
+
+#[tokio::test]
+async fn project_lifecycle_lists_renames_and_updates_recent_order() {
+    let (router, first_id, _ws, _first_dir, _db) = setup().await;
+    let second_dir = tempfile::tempdir().unwrap();
+
+    let (status, created) = send(
+        &router,
+        "POST",
+        "/api/projects",
+        Some(json!({
+            "name": "第二个产品",
+            "workspace_uri": to_file_uri(second_dir.path()).unwrap()
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED);
+    let second_id = created["data"]["project_id"].as_str().unwrap().to_owned();
+    assert_eq!(created["data"]["name"], "第二个产品");
+
+    let (status, list) = send(&router, "GET", "/api/projects", None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(list["data"].as_array().unwrap().len(), 2);
+    assert_eq!(list["data"][0]["project_id"], second_id);
+    assert!(!list["data"][0]["workspace_path"].as_str().unwrap().is_empty());
+
+    let (status, renamed) = send(
+        &router,
+        "PATCH",
+        &format!("/api/projects/{first_id}/name"),
+        Some(json!({ "name": "  新项目名称  " })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(renamed["data"]["name"], "新项目名称");
+
+    tokio::time::sleep(std::time::Duration::from_millis(2)).await;
+    let (status, opened) = send(&router, "POST", &format!("/api/projects/{first_id}/open"), None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(opened["data"]["project_id"], first_id);
+
+    let (_status, reordered) = send(&router, "GET", "/api/projects", None).await;
+    assert_eq!(reordered["data"][0]["project_id"], first_id);
+}
+
+#[tokio::test]
+async fn create_and_rename_reject_blank_project_names() {
+    let (router, project_id, _ws, _dir, _db) = setup().await;
+    let other_dir = tempfile::tempdir().unwrap();
+
+    let (status, body) = send(
+        &router,
+        "POST",
+        "/api/projects",
+        Some(json!({
+            "name": "   ",
+            "workspace_uri": to_file_uri(other_dir.path()).unwrap()
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    assert_eq!(body["code"], "invalid_project_name");
+
+    let (status, body) = send(
+        &router,
+        "PATCH",
+        &format!("/api/projects/{project_id}/name"),
+        Some(json!({ "name": "" })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    assert_eq!(body["code"], "invalid_project_name");
+}
+
+#[tokio::test]
+async fn requirement_confirmation_gates_prd_and_survives_reopen() {
+    let (router, project_id, _ws, dir, _db) = setup().await;
+    let analysis_url = format!("/api/projects/{project_id}/requirement-analysis");
+    let prd_url = format!("/api/projects/{project_id}/prd");
+
+    let (status, blocked) = send(
+        &router,
+        "PUT",
+        &prd_url,
+        Some(json!({ "title": "PRD", "content": "正文" })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CONFLICT);
+    assert_eq!(blocked["code"], "requirement_analysis_not_confirmed");
+
+    let (status, draft) = send(
+        &router,
+        "PUT",
+        &analysis_url,
+        Some(json!({ "source_text": "原始想法", "content": "## 产品目标\n提高效率" })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(draft["data"]["status"], "draft");
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("docs").join("需求分析.md")).unwrap(),
+        "## 产品目标\n提高效率"
+    );
+
+    let (status, confirmed) = send(&router, "POST", &format!("{analysis_url}/confirm"), None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(confirmed["data"]["status"], "confirmed");
+    assert!(confirmed["data"]["confirmed_at"].is_number());
+
+    let (status, saved_prd) = send(
+        &router,
+        "PUT",
+        &prd_url,
+        Some(json!({ "title": "产品 PRD", "content": "# 产品 PRD\n已确认内容" })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(saved_prd["data"]["title"], "产品 PRD");
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("docs").join("PRD.md")).unwrap(),
+        "# 产品 PRD\n已确认内容\n"
+    );
+
+    let (status, reopened) = send(&router, "GET", &prd_url, None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(reopened["data"]["content"], "# 产品 PRD\n已确认内容");
+
+    let (_status, edited) = send(
+        &router,
+        "PUT",
+        &analysis_url,
+        Some(json!({ "source_text": "原始想法", "content": "## 产品目标\n改过" })),
+    )
+    .await;
+    assert_eq!(edited["data"]["status"], "draft");
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("docs").join("需求分析.md")).unwrap(),
+        "## 产品目标\n改过"
+    );
+}
+
+#[tokio::test]
+async fn workflow_data_is_isolated_between_projects() {
+    let (router, first_id, _ws, _dir, _db) = setup().await;
+    let second_dir = tempfile::tempdir().unwrap();
+    let (_status, second) = send(
+        &router,
+        "POST",
+        "/api/projects",
+        Some(json!({
+            "name": "另一个项目",
+            "workspace_uri": to_file_uri(second_dir.path()).unwrap()
+        })),
+    )
+    .await;
+    let second_id = second["data"]["project_id"].as_str().unwrap();
+
+    let (_status, _) = send(
+        &router,
+        "PUT",
+        &format!("/api/projects/{first_id}/requirement-analysis"),
+        Some(json!({ "source_text": "A", "content": "仅属于 A" })),
+    )
+    .await;
+    let (status, second_analysis) = send(
+        &router,
+        "GET",
+        &format!("/api/projects/{second_id}/requirement-analysis"),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(second_analysis["data"].is_null());
+}
+
+#[tokio::test]
+async fn project_reads_are_isolated_by_user() {
+    let db = init_database_memory().await.unwrap();
+    let store: Arc<dyn IProjectStore> = Arc::new(SqliteProjectStore::new(db.pool().clone()));
+    let service = Arc::new(ProjectService::new(Arc::clone(&store), std::env::temp_dir()));
+    let dir = tempfile::tempdir().unwrap();
+    let created = service
+        .create_standard("system_default_user", to_file_uri(dir.path()).unwrap())
+        .await
+        .unwrap();
+    let project_id = created.project.project_id;
+
+    let router =
+        project_routes(ProjectRouterState { project: service }).layer(axum::Extension(aionui_auth::CurrentUser {
+            id: "another-user".to_owned(),
+            username: "other".to_owned(),
+            user_type: aionui_db::UserType::Local,
+            status: aionui_db::UserStatus::Active,
+        }));
+
+    let (status, list) = send(&router, "GET", "/api/projects", None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(list["data"].as_array().unwrap().is_empty());
+
+    let (status, body) = send(&router, "GET", &format!("/api/projects/{project_id}"), None).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    assert_eq!(body["code"], "project_not_found");
+}
+
+#[tokio::test]
+async fn folders_attached_to_one_project_do_not_appear_in_another_project() {
+    let (router, first_id, _ws, _first_dir, _db) = setup().await;
+    let second_dir = tempfile::tempdir().unwrap();
+    let attached_to_first = tempfile::tempdir().unwrap();
+
+    let (status, created) = send(
+        &router,
+        "POST",
+        "/api/projects",
+        Some(json!({
+            "name": "项目 B",
+            "workspace_uri": to_file_uri(second_dir.path()).unwrap()
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED);
+    let second_id = created["data"]["project_id"].as_str().unwrap();
+
+    let (status, _) = send(
+        &router,
+        "POST",
+        &folders_url(&first_id),
+        Some(json!({ "uri": to_file_uri(attached_to_first.path()).unwrap() })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+
+    let (_, first) = send(&router, "GET", &format!("/api/projects/{first_id}"), None).await;
+    let (_, second) = send(&router, "GET", &format!("/api/projects/{second_id}"), None).await;
+
+    assert_eq!(first["data"]["explorer"]["entries"].as_array().unwrap().len(), 2);
+    assert_eq!(second["data"]["explorer"]["entries"].as_array().unwrap().len(), 1);
+    assert_ne!(
+        first["data"]["explorer"]["workspace_pe_id"],
+        second["data"]["explorer"]["workspace_pe_id"]
+    );
+}
+
+#[tokio::test]
+async fn project_state_is_restored_after_database_reopen() {
+    let data_dir = tempfile::tempdir().unwrap();
+    let db_path = data_dir.path().join("projects.sqlite");
+    let workspace = tempfile::tempdir().unwrap();
+
+    let db = init_database(&db_path).await.unwrap();
+    let store: Arc<dyn IProjectStore> = Arc::new(SqliteProjectStore::new(db.pool().clone()));
+    let service = ProjectService::new(store, std::env::temp_dir());
+    let created = service
+        .create_standard_named(
+            "system_default_user",
+            "重启后仍存在".to_owned(),
+            to_file_uri(workspace.path()).unwrap(),
+        )
+        .await
+        .unwrap();
+    let project_id = created.id.clone();
+    db.close().await;
+
+    let reopened = init_database(&db_path).await.unwrap();
+    let reopened_store: Arc<dyn IProjectStore> = Arc::new(SqliteProjectStore::new(reopened.pool().clone()));
+    let reopened_service = ProjectService::new(reopened_store, std::env::temp_dir());
+    let restored = reopened_service
+        .get_project("system_default_user", &project_id)
+        .await
+        .unwrap();
+
+    assert_eq!(restored.name, "重启后仍存在");
+    assert_eq!(restored.explorer.entries.len(), 1);
+    assert_eq!(restored.explorer.entries[0].role, "workspace");
+    reopened.close().await;
 }
 
 #[tokio::test]

@@ -7,12 +7,13 @@
 import { ipcBridge } from '@/common';
 import { addRecentWorkspace, getRecentWorkspaces } from '@/renderer/components/workspace';
 import { AionInlineSearchInput } from '@/renderer/components/base';
-import { Tooltip } from '@arco-design/web-react';
+import { Button, Tooltip } from '@arco-design/web-react';
 import { Close, Down } from '@icon-park/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import styles from '../index.module.css';
+import useSWR from 'swr';
 
 type GuidWorkspaceFootnoteProps = {
   workspaceDir: string;
@@ -55,10 +56,11 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
 }) => {
   const { t } = useTranslation();
   const recentWorkspaces = getRecentWorkspaces();
+  const { data: projects = [] } = useSWR('product-projects', () => ipcBridge.project.list.invoke());
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
-  const triggerRef = useRef<HTMLButtonElement | HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -131,15 +133,22 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
     return () => document.removeEventListener('mousedown', handler);
   }, [open, closeDropdown]);
 
-  const filteredRecent = recentWorkspaces.filter((p) => {
+  const projectByPath = new Map(projects.map((project) => [project.workspace_path, project]));
+  const availableWorkspaces = [
+    ...projects.map((project) => project.workspace_path),
+    ...recentWorkspaces.filter((path) => !projectByPath.has(path)),
+  ];
+  const filteredRecent = availableWorkspaces.filter((p) => {
     if (!searchQuery) return true;
-    const name = p.split(/[\\/]/).pop() || p;
+    const name = projectByPath.get(p)?.name ?? p.split(/[\\/]/).pop() ?? p;
     return (
       name.toLowerCase().includes(searchQuery.toLowerCase()) || p.toLowerCase().includes(searchQuery.toLowerCase())
     );
   });
 
-  const workspaceName = workspaceDir ? workspaceDir.split(/[\\/]/).pop() || workspaceDir : '';
+  const workspaceName = workspaceDir
+    ? (projectByPath.get(workspaceDir)?.name ?? workspaceDir.split(/[\\/]/).pop() ?? workspaceDir)
+    : '';
 
   const dropdownEl = open
     ? createPortal(
@@ -155,7 +164,8 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
           </div>
 
           {filteredRecent.map((path) => {
-            const name = path.split(/[\\/]/).pop() || path;
+            const project = projectByPath.get(path);
+            const name = project?.name ?? path.split(/[\\/]/).pop() ?? path;
             const isActive = path === workspaceDir;
             return (
               <div
@@ -224,11 +234,7 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
         <>
           <Tooltip content={workspaceDir} position='top'>
             <div className={styles.workspacePill}>
-              <button
-                ref={triggerRef as React.RefObject<HTMLButtonElement>}
-                className={styles.workspacePillMain}
-                onClick={toggleOpen}
-              >
+              <Button ref={triggerRef} type='secondary' className={styles.workspacePillMain} onClick={toggleOpen}>
                 <FolderIcon size={14} />
                 <span className={styles.workspacePillName}>{workspaceName}</span>
                 <Down
@@ -237,7 +243,7 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
                   fill='currentColor'
                   style={{ flexShrink: 0, transform: 'translateY(1px)' }}
                 />
-              </button>
+              </Button>
               <span
                 role='button'
                 aria-label={t('guid.workspace.clearWorkspace')}
@@ -255,23 +261,22 @@ const GuidWorkspaceFootnote: React.FC<GuidWorkspaceFootnoteProps> = ({
         </>
       ) : (
         <>
-          <button
-            ref={triggerRef as React.RefObject<HTMLButtonElement>}
+          <Button
+            ref={triggerRef}
+            type='secondary'
             className={styles.workspaceEmptyBtn}
             data-testid='workspace-selector-btn'
-            onClick={recentWorkspaces.length > 0 ? toggleOpen : handleBrowseWorkspace}
+            onClick={toggleOpen}
           >
             <FolderIcon size={14} />
-            <span>{t('guid.workspace.workInProject')}</span>
-            {recentWorkspaces.length > 0 && (
-              <Down
-                theme='outline'
-                size='12'
-                fill='currentColor'
-                style={{ flexShrink: 0, transform: 'translateY(1px)' }}
-              />
-            )}
-          </button>
+            <span>{t('guid.workspace.noProject')}</span>
+            <Down
+              theme='outline'
+              size='12'
+              fill='currentColor'
+              style={{ flexShrink: 0, transform: 'translateY(1px)' }}
+            />
+          </Button>
           {dropdownEl}
         </>
       )}

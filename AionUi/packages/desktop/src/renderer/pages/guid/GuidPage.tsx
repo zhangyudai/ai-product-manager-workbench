@@ -16,11 +16,11 @@ import { appendPromptToDraft } from '@/renderer/hooks/chat/useSendBoxDraft';
 import { getFuzzyMatchIndices, useSlashCommandController } from '@/renderer/hooks/chat/useSlashCommandController';
 import { openExternalUrl } from '@/renderer/utils/platform';
 import SlashCommandMenu, { type SlashCommandMenuItem } from '@/renderer/components/chat/SlashCommandMenu';
-import AssistantSelectionArea from './components/AssistantSelectionArea';
 import GuidActionRow from './components/GuidActionRow';
 import GuidInputCard from './components/GuidInputCard';
 import GuidModelSelector from './components/GuidModelSelector';
 import QuickActionButtons from './components/QuickActionButtons';
+import WorkbenchHero from './components/WorkbenchHero';
 import FeedbackReportModal from '@/renderer/components/settings/SettingsModal/contents/FeedbackReportModal';
 import { useGuidAssistantSelection } from './hooks/useGuidAssistantSelection';
 import { useGuidInput } from './hooks/useGuidInput';
@@ -135,6 +135,7 @@ const GuidPage: React.FC = () => {
   const modelSelection = useGuidModelSelection('aionrs');
 
   const navState = location.state as GuidNavigationState | null;
+  const isWorkbenchHome = location.pathname === '/workbench';
   const resetAssistantRequested = navState?.resetAssistant === true;
   const preselectAssistantId = navState?.selectedAssistantId;
   const agentSelection = useGuidAssistantSelection({
@@ -611,12 +612,27 @@ const GuidPage: React.FC = () => {
   );
   const { handleLiveTranscript } = useLiveTranscriptInsertion(guidInput.setInput);
 
+  const handleWorkbenchPrompt = useCallback(
+    (prompt: string) => {
+      guidInput.setInput(prompt);
+      guidInput.handleTextareaFocus();
+    },
+    [guidInput]
+  );
+
   // Build the action row
   const actionRowNode = (
     <GuidActionRow
       files={displayFilePaths}
       onFilesUploaded={guidInput.handleFilesUploaded}
       onFilesPicked={guidInput.handleFilesPicked}
+      workspaceDir={guidInput.dir}
+      onSelectWorkspace={(dir) => guidInput.setDir(dir)}
+      onClearWorkspace={() => guidInput.setDir('')}
+      assistants={agentSelection.assistants}
+      selectedAssistantId={agentSelection.selectedAssistantId}
+      localeKey={localeKey}
+      onSelectAssistant={handleSelectAssistant}
       modelSelectorNode={modelSelectorNode}
       isGeminiMode={isGeminiMode}
       modelList={modelSelection.modelList}
@@ -666,18 +682,23 @@ const GuidPage: React.FC = () => {
 
   return (
     <ConfigProvider getPopupContainer={() => guidContainerRef.current || document.body}>
-      <div ref={guidContainerRef} className={styles.guidContainer}>
+      <div
+        ref={guidContainerRef}
+        className={`${styles.guidContainer} ${isWorkbenchHome ? styles.workbenchContainer : ''}`}
+      >
         <div className={styles.guidLayout}>
-          <div className={styles.heroHeader}>
-            <p className='text-2xl font-semibold mb-0 text-t-primary text-center'>{t('conversation.welcome.title')}</p>
-          </div>
-
-          <AssistantSelectionArea
-            selectedAssistantId={agentSelection.selectedAssistantId}
-            assistants={agentSelection.assistants}
-            localeKey={localeKey}
-            onSelectAssistant={handleSelectAssistant}
-          />
+          {isWorkbenchHome ? (
+            <WorkbenchHero
+              onSelectPrompt={handleWorkbenchPrompt}
+              onOpenProject={(projectId) => void navigate(projectId ? `/projects/${projectId}` : '/projects')}
+            />
+          ) : (
+            <div className={styles.heroHeader}>
+              <p className='text-2xl font-semibold mb-0 text-t-primary text-center'>
+                {t('conversation.welcome.title')}
+              </p>
+            </div>
+          )}
 
           <GuidInputCard
             focusRequestKey={navState?.focusPrefill && navState.prefillPrompt ? location.key : undefined}
@@ -698,12 +719,9 @@ const GuidPage: React.FC = () => {
             onRemoveFile={guidInput.handleRemoveFile}
             actionRow={actionRowNode}
             slashCommandMenu={slashCommandMenuNode}
-            workspaceDir={guidInput.dir}
-            onSelectWorkspace={(dir) => guidInput.setDir(dir)}
-            onClearWorkspace={() => guidInput.setDir('')}
           />
 
-          {selectedAssistantPrompts.length > 0 ? (
+          {!isWorkbenchHome && selectedAssistantPrompts.length > 0 ? (
             <div className='mt-18px w-full animate-fade-in ps-20px'>
               <div className={`${styles.assistantPromptHint} mb-10px text-start`}>
                 {t('guid.promptExamplesHint', { defaultValue: 'Try these example prompts:' })}
@@ -732,12 +750,14 @@ const GuidPage: React.FC = () => {
           ) : null}
         </div>
 
-        <QuickActionButtons
-          onOpenLink={openLink}
-          onOpenBugReport={() => setShowFeedbackModal(true)}
-          inactiveBorderColor={inactiveBorderColor}
-          activeShadow={activeShadow}
-        />
+        {!isWorkbenchHome && (
+          <QuickActionButtons
+            onOpenLink={openLink}
+            onOpenBugReport={() => setShowFeedbackModal(true)}
+            inactiveBorderColor={inactiveBorderColor}
+            activeShadow={activeShadow}
+          />
+        )}
         <FeedbackReportModal visible={showFeedbackModal} onCancel={() => setShowFeedbackModal(false)} />
       </div>
     </ConfigProvider>

@@ -1,7 +1,9 @@
 use async_trait::async_trait;
 
 use crate::error::DbError;
-use crate::models::{FolderRow, ProjectExplorerRow, ProjectKind, ProjectRow};
+use crate::models::{
+    FolderRow, ProjectExplorerRow, ProjectKind, ProjectPrdRow, ProjectRequirementAnalysisRow, ProjectRow,
+};
 
 /// Access boundary for the three project-bind tables (`projects`, `folders`,
 /// `project_explorer`).
@@ -24,6 +26,36 @@ pub trait IProjectStore: Send + Sync {
 
     async fn get_folder(&self, folder_id: &str) -> Result<Option<FolderRow>, DbError>;
     async fn get_project(&self, user_id: &str, project_id: &str) -> Result<Option<ProjectRow>, DbError>;
+    /// Standard projects with their workspace folders, newest access first.
+    async fn list_standard_projects(&self, user_id: &str) -> Result<Vec<(ProjectRow, FolderRow)>, DbError>;
+    async fn rename_project(&self, user_id: &str, project_id: &str, name: &str) -> Result<Option<ProjectRow>, DbError>;
+    async fn touch_project(&self, user_id: &str, project_id: &str) -> Result<Option<ProjectRow>, DbError>;
+
+    async fn get_requirement_analysis(
+        &self,
+        user_id: &str,
+        project_id: &str,
+    ) -> Result<Option<ProjectRequirementAnalysisRow>, DbError>;
+    async fn save_requirement_analysis(
+        &self,
+        user_id: &str,
+        project_id: &str,
+        source_text: &str,
+        content: &str,
+    ) -> Result<ProjectRequirementAnalysisRow, DbError>;
+    async fn confirm_requirement_analysis(
+        &self,
+        user_id: &str,
+        project_id: &str,
+    ) -> Result<Option<ProjectRequirementAnalysisRow>, DbError>;
+    async fn get_project_prd(&self, user_id: &str, project_id: &str) -> Result<Option<ProjectPrdRow>, DbError>;
+    async fn save_project_prd(
+        &self,
+        user_id: &str,
+        project_id: &str,
+        title: &str,
+        content: &str,
+    ) -> Result<ProjectPrdRow, DbError>;
 
     /// The workspace entry (if any) of `user_id` whose folder is `folder_id`.
     /// At most one exists per owner (enforced by

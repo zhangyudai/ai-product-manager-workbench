@@ -1,4 +1,20 @@
 {
+  "workbench": {
+    "navLabel": "工作台",
+    "brandHomeLabel": "返回工作台首页",
+    "eyebrow": "今天从哪项产品工作开始？",
+    "title": "把零散想法，整理成可确认、可执行的产品方案。",
+    "description": "选择一个入口，AI 会先梳理需求并列出待确认问题；只有你确认后，才会生成正式 PRD。",
+    "ideaTitle": "从产品想法开始",
+    "ideaDescription": "梳理目标用户、场景和 MVP 范围",
+    "ideaPrompt": "我有一个产品想法，请帮我梳理目标用户、使用场景和 MVP 范围。",
+    "importTitle": "导入现有资料",
+    "importDescription": "从访谈、会议纪要或竞品材料提炼需求",
+    "importPrompt": "我有一些现有资料，请先帮我整理其中的需求、依据和待确认问题。",
+    "businessTitle": "分析业务需求",
+    "businessDescription": "识别信息缺口并整理验收范围",
+    "businessPrompt": "我有一个业务需求，请帮我识别信息缺口、梳理范围并给出待确认问题。"
+  },
   "welcome": {
     "title": "Hi，今天有什么安排？",
     "placeholder": "发消息、上传文件、打开文件夹、创建定时任务，或输入 / 唤起命令...",
@@ -73,8 +89,8 @@
     "yesterday": "昨天",
     "recent7Days": "最近7天",
     "earlier": "更早",
-    "projectsSection": "项目",
-    "conversationsSection": "对话",
+    "projectsSection": "最近项目",
+    "conversationsSection": "最近对话",
     "newConversationInProject": "在此项目中新建对话",
     "deleting": "删除中...",
     "reorderPinned": "拖动以调整置顶会话顺序",

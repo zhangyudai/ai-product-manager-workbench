@@ -12,6 +12,15 @@
     "clearWorkspace": "Clear",
     "specifyWorkspace": "Select project folder",
     "searchPlaceholder": "Search projects…",
-    "noProject": "No Project"
+    "noProject": "No linked project"
+  },
+  "projects": {
+    "navLabel": "Projects", "title": "Projects", "description": "Keep conversations, source material, analysis and PRDs in one product workspace.",
+    "create": "Create project", "search": "Search projects", "noResults": "No matching projects.", "empty": "Create your first product project.", "recent": "Recent projects", "viewAll": "View all",
+    "updatedAt": "Updated {{time}}", "name": "Project name", "namePlaceholder": "e.g. AI Product Workbench",
+    "workspace": "Local project folder", "chooseFolder": "Choose a local folder", "createFailed": "Could not create the project.",
+    "rename": "Rename project", "renameFailed": "Could not rename the project.", "loadFailed": "Project could not be opened.",
+    "tabs": { "overview": "Overview", "materials": "Materials", "analysis": "Analysis", "prd": "PRD" },
+    "emptyStates": { "overview": "This project is ready. Start a conversation or add source material.", "materials": "No project material yet.", "analysis": "No confirmed requirement analysis yet.", "prd": "No PRD has been generated yet." }
   }
 }
