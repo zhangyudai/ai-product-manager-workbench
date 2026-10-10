@@ -61,6 +61,7 @@ vi.mock('@icon-park/react', () => {
   return {
     ArrowUp: Icon,
     Brain: Icon,
+    Down: Icon,
     FolderOpen: Icon,
     FolderUpload: Icon,
     Lightning: Icon,
@@ -72,7 +73,8 @@ vi.mock('@icon-park/react', () => {
   };
 });
 
-vi.mock('@arco-design/web-react', () => {
+vi.mock('@arco-design/web-react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@arco-design/web-react')>();
   const Menu = Object.assign(
     ({ children, className }: { children?: React.ReactNode; className?: string }) => (
       <div data-testid='dropdown-menu' className={className}>
@@ -102,7 +104,12 @@ vi.mock('@arco-design/web-react', () => {
       ),
     }
   );
+  const Select = Object.assign(({ children }: { children?: React.ReactNode }) => <div>{children}</div>, {
+    Option: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
+    OptGroup: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
+  });
   return {
+    ...actual,
     Button: ({
       children,
       disabled,
@@ -139,6 +146,7 @@ vi.mock('@arco-design/web-react', () => {
       </div>
     ),
     Menu,
+    Select,
     Message: { success: vi.fn(), error: vi.fn() },
     Tooltip: ({ children }: { children?: React.ReactNode }) => <span>{children}</span>,
   };
@@ -155,6 +163,14 @@ const renderActionRow = (overrides: Partial<React.ComponentProps<typeof GuidActi
     <GuidActionRow
       files={[]}
       onFilesUploaded={vi.fn()}
+      onFilesPicked={vi.fn()}
+      workspaceDir=''
+      onSelectWorkspace={vi.fn()}
+      onClearWorkspace={vi.fn()}
+      assistants={[]}
+      selectedAssistantId=''
+      localeKey='en-US'
+      onSelectAssistant={vi.fn()}
       modelSelectorNode={null}
       isGeminiMode={false}
       modelList={[]}

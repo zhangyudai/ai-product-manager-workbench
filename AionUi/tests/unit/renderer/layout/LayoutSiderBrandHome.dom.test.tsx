@@ -75,7 +75,7 @@ import Layout from '@renderer/components/layout/Layout';
 
 const renderLayout = () => render(<Layout sider={<div>sider</div>} />);
 
-const BACK_KEY = 'common.back';
+const HOME_KEY = 'conversation.workbench.brandHomeLabel';
 
 describe('Layout sider brand Home button', () => {
   beforeEach(() => {
@@ -105,30 +105,30 @@ describe('Layout sider brand Home button', () => {
     vi.clearAllMocks();
   });
 
-  it('navigates to the recorded last non-settings path when clicked in a settings route', () => {
+  it('navigates to the workbench when clicked in a settings route', () => {
     currentPathname = '/settings/about';
     sessionStorage.setItem('aion:last-non-settings-path', '/conversation/abc');
     renderLayout();
 
-    fireEvent.click(screen.getByLabelText(BACK_KEY));
-    expect(navigate).toHaveBeenCalledWith('/conversation/abc');
+    fireEvent.click(screen.getByLabelText(HOME_KEY));
+    expect(navigate).toHaveBeenCalledWith('/workbench');
   });
 
-  it('falls back to /guid in a settings route when no path is recorded', () => {
+  it('navigates to the workbench when no previous path is recorded', () => {
     currentPathname = '/settings/system';
     renderLayout();
 
-    fireEvent.click(screen.getByLabelText(BACK_KEY));
-    expect(navigate).toHaveBeenCalledWith('/guid');
+    fireEvent.click(screen.getByLabelText(HOME_KEY));
+    expect(navigate).toHaveBeenCalledWith('/workbench');
   });
 
-  it('falls back to /guid when the recorded path is itself a settings path', () => {
+  it('ignores the recorded path and navigates to the workbench', () => {
     currentPathname = '/settings/about';
     sessionStorage.setItem('aion:last-non-settings-path', '/settings/system');
     renderLayout();
 
-    fireEvent.click(screen.getByLabelText(BACK_KEY));
-    expect(navigate).toHaveBeenCalledWith('/guid');
+    fireEvent.click(screen.getByLabelText(HOME_KEY));
+    expect(navigate).toHaveBeenCalledWith('/workbench');
   });
 
   it('activates via keyboard (Enter and Space) in a settings route', () => {
@@ -136,11 +136,11 @@ describe('Layout sider brand Home button', () => {
     sessionStorage.setItem('aion:last-non-settings-path', '/conversation/abc');
     renderLayout();
 
-    const brand = screen.getByLabelText(BACK_KEY);
+    const brand = screen.getByLabelText(HOME_KEY);
     fireEvent.keyDown(brand, { key: 'Enter' });
     fireEvent.keyDown(brand, { key: ' ' });
     expect(navigate).toHaveBeenCalledTimes(2);
-    expect(navigate).toHaveBeenCalledWith('/conversation/abc');
+    expect(navigate).toHaveBeenCalledWith('/workbench');
   });
 
   it('ignores non-activation keys in a settings route', () => {
@@ -148,21 +148,20 @@ describe('Layout sider brand Home button', () => {
     sessionStorage.setItem('aion:last-non-settings-path', '/conversation/abc');
     renderLayout();
 
-    const brand = screen.getByLabelText(BACK_KEY);
+    const brand = screen.getByLabelText(HOME_KEY);
     fireEvent.keyDown(brand, { key: 'Tab' });
     fireEvent.keyDown(brand, { key: 'a' });
     expect(navigate).not.toHaveBeenCalled();
   });
 
-  it('renders the wordmark as a non-actionable element in a non-settings route', () => {
+  it('renders the wordmark as a workbench link in a non-settings route', () => {
     currentPathname = '/guid';
     renderLayout();
 
-    // No actionable role/label in chat routes.
-    expect(screen.queryByLabelText(BACK_KEY)).toBeNull();
+    expect(screen.getByLabelText(HOME_KEY)).toBeInTheDocument();
     const wordmark = screen.getByText(APP_DISPLAY_NAME);
     fireEvent.click(wordmark);
-    expect(navigate).not.toHaveBeenCalled();
+    expect(navigate).toHaveBeenCalledWith('/workbench');
   });
 
   it('renders the PM monogram inside the existing sidebar icon footprint', () => {
@@ -173,12 +172,12 @@ describe('Layout sider brand Home button', () => {
     expect(monogram?.parentElement).toHaveClass('size-32px', 'bg-black');
   });
 
-  it('does not navigate when the wordmark is clicked in a non-settings route', () => {
+  it('navigates when the wordmark is clicked in a non-settings route', () => {
     currentPathname = '/conversation/xyz';
     renderLayout();
 
     fireEvent.click(screen.getByText(APP_DISPLAY_NAME));
-    expect(navigate).not.toHaveBeenCalled();
+    expect(navigate).toHaveBeenCalledWith('/workbench');
   });
 
   it('provides common shortcuts with a functional sider toggle', () => {
@@ -205,7 +204,7 @@ describe('Layout sider brand Home button', () => {
     expect(shortcutMocks.params?.toggleSider).toEqual(expect.any(Function));
   });
 
-  it('clicking the logo icon counts toward the devtools easter-egg and never navigates', () => {
+  it('clicking the logo icon counts toward the devtools easter-egg and opens the workbench', () => {
     currentPathname = '/settings/about';
     sessionStorage.setItem('aion:last-non-settings-path', '/conversation/abc');
     const { container } = renderLayout();
@@ -215,7 +214,7 @@ describe('Layout sider brand Home button', () => {
     expect(icon).toBeTruthy();
     for (let i = 0; i < 4; i++) fireEvent.click(icon);
     expect(openDevTools).toHaveBeenCalled();
-    expect(navigate).not.toHaveBeenCalled();
+    expect(navigate).toHaveBeenCalledWith('/workbench');
   });
 
   it('opens the update notification directly for tray update checks', () => {

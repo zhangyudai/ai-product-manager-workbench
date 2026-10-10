@@ -15,12 +15,30 @@
     "noProject": "不关联项目"
   },
   "projects": {
-    "navLabel": "项目", "title": "项目", "description": "把对话、资料、需求分析和 PRD 集中在一个产品项目中。",
-    "create": "创建项目", "search": "搜索项目", "noResults": "没有找到匹配的项目。", "empty": "创建第一个产品项目。", "recent": "最近项目", "viewAll": "查看全部",
-    "updatedAt": "更新于 {{time}}", "name": "项目名称", "namePlaceholder": "例如：AI 产品工作台",
-    "workspace": "本地项目文件夹", "chooseFolder": "选择本地文件夹", "createFailed": "项目创建失败。",
-    "rename": "重命名项目", "renameFailed": "项目重命名失败。", "loadFailed": "无法打开项目。",
+    "navLabel": "项目",
+    "title": "项目",
+    "description": "把对话、资料、需求分析和 PRD 集中在一个产品项目中。",
+    "create": "创建项目",
+    "search": "搜索项目",
+    "noResults": "没有找到匹配的项目。",
+    "empty": "创建第一个产品项目。",
+    "recent": "最近项目",
+    "viewAll": "查看全部",
+    "updatedAt": "更新于 {{time}}",
+    "name": "项目名称",
+    "namePlaceholder": "例如：AI 产品工作台",
+    "workspace": "本地项目文件夹",
+    "chooseFolder": "选择本地文件夹",
+    "createFailed": "项目创建失败。",
+    "rename": "重命名项目",
+    "renameFailed": "项目重命名失败。",
+    "loadFailed": "无法打开项目。",
     "tabs": { "overview": "项目概览", "materials": "项目资料", "analysis": "需求分析", "prd": "PRD" },
-    "emptyStates": { "overview": "项目已准备好，可以开始对话或添加项目资料。", "materials": "还没有项目资料。", "analysis": "还没有已确认的需求分析。", "prd": "还没有生成 PRD。" }
+    "emptyStates": {
+      "overview": "项目已准备好，可以开始对话或添加项目资料。",
+      "materials": "还没有项目资料。",
+      "analysis": "还没有已确认的需求分析。",
+      "prd": "还没有生成 PRD。"
+    }
   }
 }

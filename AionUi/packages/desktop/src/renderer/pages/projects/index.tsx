@@ -24,9 +24,11 @@ const pathToFileUri = (path: string): string => {
 const ProjectsPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { data = [], isLoading, mutate } = useSWR<ProjectSummaryDto[]>('product-projects', () =>
-    ipcBridge.project.list.invoke()
-  );
+  const {
+    data = [],
+    isLoading,
+    mutate,
+  } = useSWR<ProjectSummaryDto[]>('product-projects', () => ipcBridge.project.list.invoke());
   const [query, setQuery] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [name, setName] = useState('');
