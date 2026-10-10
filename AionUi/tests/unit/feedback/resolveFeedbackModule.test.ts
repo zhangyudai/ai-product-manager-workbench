@@ -59,7 +59,14 @@ describe('resolveFeedbackModule', () => {
     );
     // Pages where preselecting a module makes no sense (multi-purpose or
     // pre-auth surfaces where the user picks the module themselves).
-    const moduleLess = new Set(['/guid', '/login', '/test/components']);
+    const moduleLess = new Set([
+      '/workbench',
+      '/guid',
+      '/projects',
+      '/projects/sample-id',
+      '/login',
+      '/test/components',
+    ]);
     const paths = [...routerSrc.matchAll(/path='([^*'][^']*)'/g)].map((m) => m[1]);
     expect(paths.length).toBeGreaterThan(10);
     for (const routePath of paths) {

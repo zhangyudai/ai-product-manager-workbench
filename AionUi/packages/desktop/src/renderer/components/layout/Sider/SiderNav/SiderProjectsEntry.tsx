@@ -19,13 +19,7 @@ type Props = {
   onClick: () => void;
 };
 
-const SiderProjectsEntry: React.FC<Props> = ({
-  isMobile,
-  isActive,
-  collapsed,
-  siderTooltipProps,
-  onClick,
-}) => {
+const SiderProjectsEntry: React.FC<Props> = ({ isMobile, isActive, collapsed, siderTooltipProps, onClick }) => {
   const { t } = useTranslation();
   const label = t('guid.projects.navLabel', { defaultValue: 'Projects' });
   return (

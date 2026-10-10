@@ -30,7 +30,7 @@ import { useTypewriterPlaceholder } from './hooks/useTypewriterPlaceholder';
 import { ensureBackendMcpCatalog } from '@/renderer/hooks/mcp/catalog';
 import { resolveGuidAssistantDefaults } from './utils/assistantDefaults';
 import SpeechInputButton from '@/renderer/components/chat/SpeechInputButton';
-import { chatFileRefPath, uploadFileRef } from '@/common/types/chatFile';
+import { chatFileRefPath, isChatFileRef, type ChatFileRef, uploadFileRef } from '@/common/types/chatFile';
 import { useOpenFileSelector } from '@/renderer/hooks/file/useOpenFileSelector';
 import { appendSpeechTranscript } from '@/renderer/hooks/system/useSpeechInput';
 import { useLiveTranscriptInsertion } from '@/renderer/hooks/system/useLiveTranscriptInsertion';
@@ -47,6 +47,8 @@ type GuidNavigationState = {
   selectedAssistantId?: string;
   prefillPrompt?: string;
   prefillFiles?: string[];
+  /** Project-scoped source materials selected before starting a conversation. */
+  prefillFileRefs?: ChatFileRef[];
   preservePrefillDraft?: boolean;
   focusPrefill?: boolean;
   workspace?: string;
@@ -524,18 +526,28 @@ const GuidPage: React.FC = () => {
     const prefillState = location.state as GuidNavigationState | null;
     const prefillPrompt = prefillState?.prefillPrompt;
     const prefillFiles = prefillState?.prefillFiles;
+    const prefillFileRefs = prefillState?.prefillFileRefs?.filter(isChatFileRef);
     const preserveCurrentDraft = Boolean(prefillState?.preservePrefillDraft || skipNextClearRef.current);
-    if (prefillPrompt && consumedPrefillKeyRef.current !== location.key) {
+    if (
+      (prefillPrompt || (prefillFileRefs && prefillFileRefs.length > 0)) &&
+      consumedPrefillKeyRef.current !== location.key
+    ) {
       // Consume prompt + optional attachments (e.g. bug-report screenshots) once.
       consumedPrefillKeyRef.current = location.key;
       skipNextClearRef.current = true;
       if (prefillState.preservePrefillDraft) {
         guidInput.setInput((draft) => appendPromptToDraft(draft, prefillPrompt));
       } else {
-        guidInput.setInput(prefillPrompt);
+        guidInput.setInput(prefillPrompt ?? t('conversation.explorer.materialDefaultPrompt'));
         // Prefill attachments (e.g. "via chat" screenshots) arrive as bare paths
         // with no source tag; treat them as uploads to preserve prior behavior.
-        guidInput.setFiles(prefillFiles && prefillFiles.length > 0 ? prefillFiles.map(uploadFileRef) : []);
+        guidInput.setFiles(
+          prefillFileRefs && prefillFileRefs.length > 0
+            ? prefillFileRefs
+            : prefillFiles && prefillFiles.length > 0
+              ? prefillFiles.map(uploadFileRef)
+              : []
+        );
       }
     } else if (skipNextClearRef.current) {
       // This pass is the state-clearing replace() right after a prefill — keep
@@ -549,7 +561,7 @@ const GuidPage: React.FC = () => {
     if (!preserveCurrentDraft && !(location.state as { workspace?: string } | null)?.workspace) {
       guidInput.setDir('');
     }
-  }, [guidInput.setDir, guidInput.setFiles, guidInput.setInput, guidInput.setLoading, location.key, location.state]);
+  }, [guidInput.setDir, guidInput.setFiles, guidInput.setInput, guidInput.setLoading, location.key, location.state, t]);
 
   // A draft-preserving prefill is an action, not durable navigation state.
   // Strip it after consumption so browser history or a remount cannot replay it.
@@ -560,6 +572,7 @@ const GuidPage: React.FC = () => {
     const {
       prefillPrompt: _prefillPrompt,
       prefillFiles: _prefillFiles,
+      prefillFileRefs: _prefillFileRefs,
       preservePrefillDraft: _preservePrefillDraft,
       focusPrefill: _focusPrefill,
       ...remainingState

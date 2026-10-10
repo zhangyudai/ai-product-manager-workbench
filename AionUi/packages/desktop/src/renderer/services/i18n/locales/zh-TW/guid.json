@@ -15,12 +15,30 @@
     "noProject": "不關聯專案"
   },
   "projects": {
-    "navLabel": "專案", "title": "專案", "description": "把對話、資料、需求分析和 PRD 集中在一個產品專案中。",
-    "create": "建立專案", "search": "搜尋專案", "noResults": "沒有找到符合的專案。", "empty": "建立第一個產品專案。", "recent": "最近專案", "viewAll": "查看全部",
-    "updatedAt": "更新於 {{time}}", "name": "專案名稱", "namePlaceholder": "例如：AI 產品工作台",
-    "workspace": "本機專案資料夾", "chooseFolder": "選擇本機資料夾", "createFailed": "專案建立失敗。",
-    "rename": "重新命名專案", "renameFailed": "專案重新命名失敗。", "loadFailed": "無法開啟專案。",
+    "navLabel": "專案",
+    "title": "專案",
+    "description": "把對話、資料、需求分析和 PRD 集中在一個產品專案中。",
+    "create": "建立專案",
+    "search": "搜尋專案",
+    "noResults": "沒有找到符合的專案。",
+    "empty": "建立第一個產品專案。",
+    "recent": "最近專案",
+    "viewAll": "查看全部",
+    "updatedAt": "更新於 {{time}}",
+    "name": "專案名稱",
+    "namePlaceholder": "例如：AI 產品工作台",
+    "workspace": "本機專案資料夾",
+    "chooseFolder": "選擇本機資料夾",
+    "createFailed": "專案建立失敗。",
+    "rename": "重新命名專案",
+    "renameFailed": "專案重新命名失敗。",
+    "loadFailed": "無法開啟專案。",
     "tabs": { "overview": "專案概覽", "materials": "專案資料", "analysis": "需求分析", "prd": "PRD" },
-    "emptyStates": { "overview": "專案已準備好，可以開始對話或加入專案資料。", "materials": "還沒有專案資料。", "analysis": "還沒有已確認的需求分析。", "prd": "還沒有產生 PRD。" }
+    "emptyStates": {
+      "overview": "專案已準備好，可以開始對話或加入專案資料。",
+      "materials": "還沒有專案資料。",
+      "analysis": "還沒有已確認的需求分析。",
+      "prd": "還沒有產生 PRD。"
+    }
   }
 }
