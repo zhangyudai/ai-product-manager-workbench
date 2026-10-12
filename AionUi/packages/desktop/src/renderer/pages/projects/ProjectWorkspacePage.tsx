@@ -14,6 +14,8 @@ import useSWR from 'swr';
 import { getCurrentProject, setCurrentProject } from '@/renderer/pages/conversation/explorer/currentProjectStore';
 import { refreshRoot } from '@/renderer/pages/conversation/explorer/explorerStore';
 import { uploadFileViaHttp } from '@/renderer/services/FileService';
+import type { ChatFileRef } from '@/common/types/chatFile';
+import OutputQualityPanel from './components/OutputQualityPanel';
 import {
   PROJECT_MATERIAL_EXTENSIONS,
   partitionProjectMaterialPaths,
@@ -77,6 +79,20 @@ const ProjectWorkspacePage: React.FC = () => {
       },
     });
   }, [chosenMaterialRefs, id, navigate, workspacePath]);
+
+  const openQualityChat = useCallback(
+    (prompt: string, fileRefs: ChatFileRef[]) => {
+      void navigate('/guid', {
+        state: {
+          workspace: workspacePath,
+          projectId: id,
+          prefillPrompt: prompt,
+          prefillFileRefs: fileRefs,
+        },
+      });
+    },
+    [id, navigate, workspacePath]
+  );
 
   const parseMaterials = useCallback(
     async (relativePaths: string[]) => {
@@ -437,6 +453,12 @@ const ProjectWorkspacePage: React.FC = () => {
                     <p className='mb-0 mt-10px text-12px leading-20px text-t-tertiary'>
                       {t('conversation.explorer.materialPrivacyHint')}
                     </p>
+                    <OutputQualityPanel
+                      workspacePeId={workspacePeId}
+                      workspacePath={workspacePath}
+                      selectedMaterialRefs={chosenMaterialRefs}
+                      onStartChat={openQualityChat}
+                    />
                   </div>
                 </div>
               </div>

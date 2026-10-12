@@ -13,5 +13,38 @@
     "specifyWorkspace": "Выбрать папку проекта",
     "searchPlaceholder": "Поиск проектов…",
     "noProject": "Без проекта"
+  },
+  "projects": {
+    "outputQuality": {
+      "title": "Output quality check",
+      "description": "Check requirement analyses and PRDs for completeness. Rewrite only one section and save a new version.",
+      "refresh": "Refresh files",
+      "selectDocument": "Select a requirement analysis or PRD",
+      "noDocuments": "This project has no Markdown documents yet.",
+      "loadFailed": "The project document could not be loaded. Refresh and try again.",
+      "passed": "Ready for review",
+      "needsWork": "Needs work",
+      "documentType": { "requirement": "Requirement analysis", "prd": "PRD" },
+      "issuesTitle": "Check results",
+      "noIssues": "No structural issues found.",
+      "severity": { "error": "Required", "warning": "Confirm" },
+      "issue": {
+        "emptyDocument": "The document has no content.",
+        "missingSection": "The {{section}} section is missing.",
+        "emptySection": "The {{section}} section is empty.",
+        "missingUserStoryFormat": "User stories do not state a role, goal, and value.",
+        "missingAcceptanceFormat": "Acceptance criteria lack observable preconditions, actions, and outcomes.",
+        "missingRiskResponse": "Risks and their responses are missing.",
+        "unresolvedConflict": "The material contains a conflict that is not an explicit open question."
+      },
+      "reviewInChat": "Review in project chat",
+      "sectionTitle": "Rewrite one section",
+      "regenerateInChat": "Rewrite this section in chat",
+      "replacementPlaceholder": "After you confirm the assistant's new section, paste it here…",
+      "versionHint": "Saving creates the next version and keeps the original unchanged.",
+      "saveVersion": "Save as new version",
+      "saveSuccess": "Saved as {{path}}",
+      "saveFailed": "The new version could not be saved. The original is unchanged."
+    }
   }
 }

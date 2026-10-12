@@ -13,6 +13,8 @@ const mocks = vi.hoisted(() => ({
   uploadFile: vi.fn(),
   getContentMetadata: vi.fn(),
   readContent: vi.fn(),
+  listWorkspaceFiles: vi.fn(),
+  writeFile: vi.fn(),
   messageSuccess: vi.fn(),
   messageWarning: vi.fn(),
   messageError: vi.fn(),
@@ -84,6 +86,8 @@ vi.mock('@/common', () => ({
       copyFilesToProject: { invoke: mocks.copyFiles },
       getContentMetadata: { invoke: mocks.getContentMetadata },
       readContent: { invoke: mocks.readContent },
+      listWorkspaceFiles: { invoke: mocks.listWorkspaceFiles },
+      writeFile: { invoke: mocks.writeFile },
     },
     project: {
       open: { invoke: vi.fn() },
@@ -134,6 +138,8 @@ describe('ProjectWorkspacePage material import', () => {
       lastModified: 1,
     });
     mocks.readContent.mockResolvedValue('AA==');
+    mocks.listWorkspaceFiles.mockResolvedValue([]);
+    mocks.writeFile.mockResolvedValue(true);
     localStorage.clear();
   });
 
