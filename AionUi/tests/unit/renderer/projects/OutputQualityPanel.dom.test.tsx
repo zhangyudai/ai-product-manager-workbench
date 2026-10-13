@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   readContent: vi.fn(),
   writeFile: vi.fn(),
   refreshRoot: vi.fn(),
+  downloadTextContent: vi.fn(),
   success: vi.fn(),
   error: vi.fn(),
 }));
@@ -25,9 +26,11 @@ vi.mock('@/common', () => ({
 }));
 
 vi.mock('@/renderer/pages/conversation/explorer/explorerStore', () => ({ refreshRoot: mocks.refreshRoot }));
+vi.mock('@/renderer/utils/file/download', () => ({ downloadTextContent: mocks.downloadTextContent }));
 
 vi.mock('@icon-park/react', () => ({
   CheckOne: () => <span />,
+  Download: () => <span />,
   Refresh: () => <span />,
   Write: () => <span />,
 }));
@@ -88,6 +91,7 @@ const translations: Record<string, string> = {
   'guid.projects.outputQuality.regenerateInChat': '在对话中重写本章节',
   'guid.projects.outputQuality.replacementPlaceholder': '粘贴新章节',
   'guid.projects.outputQuality.saveVersion': '另存为新版本',
+  'guid.projects.outputQuality.exportMarkdown': '导出 Markdown',
 };
 
 vi.mock('react-i18next', () => ({
@@ -178,6 +182,18 @@ describe('OutputQualityPanel', () => {
     expect(request.data).toContain('## 目标用户\n产品经理。');
     expect(mocks.refreshRoot).toHaveBeenCalledWith('pe1');
     await waitFor(() => expect(mocks.success).toHaveBeenCalled());
+  });
+
+  it('exports the selected Markdown document without changing the workspace file', async () => {
+    renderPanel();
+    fireEvent.change(await screen.findByLabelText('选择文档'), { target: { value: 'docs/PRD.md' } });
+    await waitFor(() => expect(mocks.readContent).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByText('loading')).not.toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: '导出 Markdown' }));
+
+    expect(mocks.downloadTextContent).toHaveBeenCalledWith(prd, 'PRD.md', 'text/markdown;charset=utf-8');
+    expect(mocks.writeFile).not.toHaveBeenCalled();
+    expect(mocks.success).toHaveBeenCalled();
   });
 
   it('keeps the panel recoverable when listing files fails', async () => {

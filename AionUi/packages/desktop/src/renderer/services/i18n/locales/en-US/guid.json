@@ -63,7 +63,10 @@
       "versionHint": "Saving creates the next version and keeps the original unchanged.",
       "saveVersion": "Save as new version",
       "saveSuccess": "Saved as {{path}}",
-      "saveFailed": "The new version could not be saved. The original is unchanged."
+      "saveFailed": "The new version could not be saved. The original is unchanged.",
+      "exportMarkdown": "Export Markdown",
+      "exportSuccess": "Exported {{name}}",
+      "exportFailed": "Markdown export failed. Try again."
     },
     "emptyStates": {
       "overview": "This project is ready. Start a conversation or add source material.",
