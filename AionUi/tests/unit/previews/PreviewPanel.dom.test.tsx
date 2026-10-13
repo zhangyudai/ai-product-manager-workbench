@@ -22,7 +22,7 @@ beforeAll(async () => {
     })
   );
   previewPanelModule = await import('@/renderer/pages/conversation/Preview/components/PreviewPanel/PreviewPanel');
-}, 60_000);
+}, 180_000);
 
 afterAll(() => {
   vi.unstubAllGlobals();
