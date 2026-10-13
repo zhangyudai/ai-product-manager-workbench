@@ -63,7 +63,10 @@
       "versionHint": "保存时创建递增版本，不覆盖原文件。",
       "saveVersion": "另存为新版本",
       "saveSuccess": "已保存为 {{path}}",
-      "saveFailed": "新版本保存失败，原文件未改变。"
+      "saveFailed": "新版本保存失败，原文件未改变。",
+      "exportMarkdown": "导出 Markdown",
+      "exportSuccess": "已导出 {{name}}",
+      "exportFailed": "Markdown 导出失败，请重试。"
     },
     "emptyStates": {
       "overview": "项目已准备好，可以开始对话或添加项目资料。",

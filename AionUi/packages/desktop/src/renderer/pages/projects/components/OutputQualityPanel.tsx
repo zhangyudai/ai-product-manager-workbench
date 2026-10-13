@@ -7,8 +7,9 @@
 import { ipcBridge } from '@/common';
 import { chatFileRefKey, projectFileRef, type ChatFileRef } from '@/common/types/chatFile';
 import { refreshRoot } from '@/renderer/pages/conversation/explorer/explorerStore';
+import { downloadTextContent } from '@/renderer/utils/file/download';
 import { Button, Empty, Input, Message, Select, Spin, Tag } from '@arco-design/web-react';
-import { CheckOne, Refresh, Write } from '@icon-park/react';
+import { CheckOne, Download, Refresh, Write } from '@icon-park/react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -111,6 +112,17 @@ const OutputQualityPanel: React.FC<Props> = ({ workspacePeId, workspacePath, sel
   );
   const selectedSection = report?.sections.find((section) => section.id === selectedSectionId);
 
+  const exportMarkdown = () => {
+    if (!selectedPath || !content) return;
+    try {
+      const fileName = selectedPath.replace(/\\/g, '/').split('/').pop() || 'document.md';
+      downloadTextContent(content, fileName, 'text/markdown;charset=utf-8');
+      Message.success(t('guid.projects.outputQuality.exportSuccess', { name: fileName }));
+    } catch {
+      Message.error(t('guid.projects.outputQuality.exportFailed'));
+    }
+  };
+
   const saveVersion = async () => {
     if (!selectedPath || !selectedSection || !replacement.trim()) return;
     setSaving(true);
@@ -192,13 +204,18 @@ const OutputQualityPanel: React.FC<Props> = ({ workspacePeId, workspacePath, sel
                 <QualityIssueList issues={report.issues} />
               </div>
 
-              <Button
-                icon={<CheckOne />}
-                disabled={!targetRef}
-                onClick={() => targetRef && onStartChat(buildQualityReviewPrompt(selectedPath, report), chatRefs)}
-              >
-                {t('guid.projects.outputQuality.reviewInChat')}
-              </Button>
+              <div className='flex flex-wrap gap-8px'>
+                <Button
+                  icon={<CheckOne />}
+                  disabled={!targetRef}
+                  onClick={() => targetRef && onStartChat(buildQualityReviewPrompt(selectedPath, report), chatRefs)}
+                >
+                  {t('guid.projects.outputQuality.reviewInChat')}
+                </Button>
+                <Button icon={<Download />} disabled={!content} onClick={exportMarkdown}>
+                  {t('guid.projects.outputQuality.exportMarkdown')}
+                </Button>
+              </div>
 
               {report.sections.length > 0 ? (
                 <div className='rounded-12px border border-border-2 bg-bg-2 p-14px'>
